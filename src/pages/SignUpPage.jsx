@@ -1,431 +1,442 @@
-import React, {useState} from 'react';
-import styled from 'styled-components/native';
-import {Alert} from 'react-native';
-import ApiService from '../utils/api';
-import AsyncStorage from '../utils/storage';
+import { useMemo, useState } from "react";
+import styled from "styled-components";
+// import ApiService from "../utils/api"; // TODO: 연결되면 API 호출 활성화
 
-type SignUpScreenProps = {
-  onSignUpSuccess: () => void;
-  onLoginPress: () => void;
-};
-
-const SignUpScreen = ({onSignUpSuccess, onLoginPress}: SignUpScreenProps) => {
+const SignUpScreen = ({
+  onSignUpSuccess = () => {},
+  onLoginPress = () => {},
+}) => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [userId, setUserId] = useState('');
-  const [password, setPassword] = useState('');
-  const [passwordConfirm, setPasswordConfirm] = useState('');
-  const [nickname, setNickname] = useState('');
-
+  const [userId, setUserId] = useState("");
+  const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
+  const [nickname, setNickname] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [passwordError, setPasswordError] = useState('');
-  const [passwordConfirmError, setPasswordConfirmError] = useState('');
 
-  const [idError, setIdError] = useState('');
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordConfirmError, setPasswordConfirmError] = useState("");
+  const [idError, setIdError] = useState("");
   const [isIdValid, setIsIdValid] = useState(false);
   const [isIdChecked, setIsIdChecked] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const checkIdDuplicate = () => {
-    if (!userId.trim()) {
-      setIdError('아이디를 입력해주세요.');
-      return;
-    }
-
-    // 아이디 형식 체크만 진행 (중복확인은 회원가입 시점에)
-    if (userId.length < 2) {
-      setIdError('아이디는 2자 이상이어야 합니다.');
-      setIsIdValid(false);
-    } else {
-      setIdError('');
-      setIsIdValid(true);
-      setIsIdChecked(true);
-      Alert.alert('확인', '사용 가능한 아이디 형식입니다.');
-    }
-  };
-
-  const handleIdChange = (text: string) => {
-    setUserId(text);
-    setIsIdChecked(false);
-    setIsIdValid(false);
-    setIdError('');
-  };
-
-  const validatePassword = (pass: string) => {
+  const validatePassword = (pass) => {
     const hasMinLength = pass.length >= 8;
     const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(pass);
 
     if (!hasMinLength) {
-      return '비밀번호는 8자리 이상이어야 합니다.';
+      return "비밀번호는 8자리 이상이어야 합니다.";
     }
     if (!hasSpecialChar) {
-      return '특수문자를 포함해야 합니다.';
+      return "특수문자를 포함해야 합니다.";
     }
-    return '';
+    return "";
   };
 
-  const handlePasswordChange = (text: string) => {
-    setPassword(text);
-    const error = validatePassword(text);
-    setPasswordError(error);
-
-    // 비밀번호가 일치하지 않을 때에는,
-    if (passwordConfirm && text !== passwordConfirm) {
-      setPasswordConfirmError('비밀번호가 일치하지 않습니다.');
-    } else {
-      setPasswordConfirmError('');
-    }
-  };
-
-  const handlePasswordConfirmChange = (text: string) => {
-    setPasswordConfirm(text);
-    if (text && text !== password) {
-      setPasswordConfirmError('비밀번호가 일치하지 않습니다.');
-    } else {
-      setPasswordConfirmError('');
-    }
-  };
-
-  const isPasswordValid = () => {
-    return (
+  const isPasswordValid = useMemo(
+    () =>
       password.length >= 8 &&
       /[!@#$%^&*(),.?":{}|<>]/.test(password) &&
       password === passwordConfirm &&
-      passwordConfirm.length > 0
-    );
+      passwordConfirm.length > 0,
+    [password, passwordConfirm]
+  );
+
+  const canSubmit = useMemo(() => {
+    if (currentStep === 1) {
+      return isIdValid;
+    }
+    if (currentStep === 2) {
+      return isPasswordValid;
+    }
+    if (currentStep === 3) {
+      return nickname.trim().length > 0;
+    }
+    return false;
+  }, [currentStep, isIdValid, isPasswordValid, nickname]);
+
+  const checkIdDuplicate = () => {
+    if (!userId.trim()) {
+      setIdError("아이디를 입력해주세요.");
+      return;
+    }
+
+    if (userId.length < 2) {
+      setIdError("아이디는 2자 이상이어야 합니다.");
+      setIsIdValid(false);
+      return;
+    }
+
+    setIdError("");
+    setIsIdValid(true);
+    setIsIdChecked(true);
+    window.alert("사용 가능한 아이디 형식입니다.");
   };
 
-  const handleNext = async () => {
+  const handleIdChange = (event) => {
+    const { value } = event.target;
+    setUserId(value);
+    setIsIdChecked(false);
+    setIsIdValid(false);
+    setIdError("");
+  };
+
+  const handlePasswordChange = (event) => {
+    const { value } = event.target;
+    setPassword(value);
+    const error = validatePassword(value);
+    setPasswordError(error);
+
+    if (passwordConfirm && value !== passwordConfirm) {
+      setPasswordConfirmError("비밀번호가 일치하지 않습니다.");
+    } else {
+      setPasswordConfirmError("");
+    }
+  };
+
+  const handlePasswordConfirmChange = (event) => {
+    const { value } = event.target;
+    setPasswordConfirm(value);
+    if (value && value !== password) {
+      setPasswordConfirmError("비밀번호가 일치하지 않습니다.");
+    } else {
+      setPasswordConfirmError("");
+    }
+  };
+
+  const handleNext = async (event) => {
+    event.preventDefault();
+    if (!canSubmit || isSubmitting) {
+      return;
+    }
+
     if (currentStep === 1) {
       if (!userId.trim()) {
-        setIdError('아이디를 입력해주세요.');
+        setIdError("아이디를 입력해주세요.");
         return;
       }
       if (!isIdChecked) {
-        setIdError('아이디 중복 확인을 해주세요.');
+        setIdError("아이디 중복 확인을 해주세요.");
         return;
       }
-      if (isIdValid) {
-        setCurrentStep(2);
-      }
-    } else if (currentStep === 2) {
-      if (isPasswordValid()) {
+      setCurrentStep(2);
+      return;
+    }
+
+    if (currentStep === 2) {
+      if (isPasswordValid) {
         setCurrentStep(3);
       }
-    } else if (currentStep === 3) {
-      if (nickname.trim().length > 0) {
-        try {
-          const response = await ApiService.register(
-            userId,
-            password,
-            nickname,
-          );
+      return;
+    }
 
-          // 회원가입 성공 후 자동 로그인
-          await ApiService.login(userId, password);
-          // 첫 회원가입 표시
-          await AsyncStorage.setItem('isFirstSignUp', 'true');
-          onSignUpSuccess();
-        } catch (error: any) {
-          if (error.statusCode === 409) {
-            Alert.alert('회원가입 실패', '이미 사용중인 아이디입니다.');
-            setCurrentStep(1);
-            setIsIdChecked(false);
-            setIsIdValid(false);
-          } else if (error.statusCode === 400) {
-            const message = Array.isArray(error.message)
-              ? error.message.join('\n')
-              : error.message;
-            Alert.alert('회원가입 실패', message);
-          } else {
-            Alert.alert('오류', '회원가입 중 문제가 발생했습니다.');
-          }
+    if (currentStep === 3) {
+      if (!nickname.trim()) {
+        return;
+      }
+      setIsSubmitting(true);
+      try {
+        // await ApiService.register(userId, password, nickname);
+        // await ApiService.login(userId, password);
+        try {
+          window.localStorage.setItem("isFirstSignUp", "true");
+        } catch (storageError) {
+          console.warn("Unable to access localStorage", storageError);
         }
+        onSignUpSuccess();
+      } catch (error) {
+        console.error("Signup error (placeholder)", error);
+        window.alert("회원가입 중 문제가 발생했습니다.");
+      } finally {
+        setIsSubmitting(false);
       }
     }
   };
 
   const renderStepContent = () => {
-    switch (currentStep) {
-      case 1:
-        return (
-          <>
-            <StepTitle>
-              POP!CK에서 사용하실{'\n'}아이디를 입력해주세요.
-            </StepTitle>
-            <InputContainer>
-              <InputWrapper hasError={!!idError}>
-                <StyledInput
-                  value={userId}
-                  onChangeText={handleIdChange}
-                  placeholder="아이디를 입력해주세요."
-                  placeholderTextColor="#A7A7A7"
-                />
-                <DuplicateCheckButton onPress={checkIdDuplicate}>
-                  <DuplicateCheckText>중복 확인</DuplicateCheckText>
-                </DuplicateCheckButton>
-              </InputWrapper>
-              {idError && (
-                <ErrorContainer>
-                  <ErrorIcon source={require('../assets/error.png')} />
-                  <ErrorText>{idError}</ErrorText>
-                </ErrorContainer>
-              )}
-            </InputContainer>
-          </>
-        );
-      case 2:
-        return (
-          <>
-            <StepTitle>
-              POP!CK에서 사용하실{'\n'}비밀번호를 입력해주세요.
-            </StepTitle>
-            <InputContainer>
-              <InputWrapper hasError={!!passwordError}>
-                <StyledInput
-                  value={password}
-                  onChangeText={handlePasswordChange}
-                  placeholder="비밀번호를 입력해주세요."
-                  placeholderTextColor="#999"
-                  secureTextEntry={!showPassword}
-                />
-                <EyeButton onPress={() => setShowPassword(!showPassword)}>
-                  <EyeIcon source={require('../assets/eyes.png')} />
-                </EyeButton>
-              </InputWrapper>
-              {passwordError && (
-                <ErrorContainer>
-                  <ErrorIcon source={require('../assets/error.png')} />
-                  <ErrorText>{passwordError}</ErrorText>
-                </ErrorContainer>
-              )}
-            </InputContainer>
-
-            <InputContainer>
-              <InputWrapper hasError={!!passwordConfirmError}>
-                <StyledInput
-                  value={passwordConfirm}
-                  onChangeText={handlePasswordConfirmChange}
-                  placeholder="비밀번호를 다시 한 번 입력해주세요."
-                  placeholderTextColor="#999"
-                  secureTextEntry={true}
-                />
-              </InputWrapper>
-              {passwordConfirmError && (
-                <ErrorContainer>
-                  <ErrorIcon source={require('../assets/error.png')} />
-                  <ErrorText>{passwordConfirmError}</ErrorText>
-                </ErrorContainer>
-              )}
-            </InputContainer>
-          </>
-        );
-      case 3:
-        return (
-          <>
-            <StepTitle>
-              POP!CK에서 사용하실{'\n'}닉네임을 입력해주세요.
-            </StepTitle>
-            <InputContainer>
-              <InputWrapper>
-                <StyledInput
-                  value={nickname}
-                  onChangeText={setNickname}
-                  placeholder="닉네임을 입력해주세요."
-                  placeholderTextColor="#A7A7A7"
-                  secureTextEntry={false}
-                />
-              </InputWrapper>
-            </InputContainer>
-          </>
-        );
-      default:
-        return null;
+    if (currentStep === 1) {
+      return (
+        <>
+          <StepTitle>
+            POP!CK에서 사용하실
+            <br />
+            아이디를 입력해주세요.
+          </StepTitle>
+          <Field>
+            <InputWrapper hasError={Boolean(idError)}>
+              <StyledInput
+                value={userId}
+                onChange={handleIdChange}
+                placeholder="아이디를 입력해주세요."
+                autoComplete="username"
+              />
+              <OutlineButton type="button" onClick={checkIdDuplicate}>
+                중복 확인
+              </OutlineButton>
+            </InputWrapper>
+            {idError && <ErrorText>{idError}</ErrorText>}
+          </Field>
+        </>
+      );
     }
+
+    if (currentStep === 2) {
+      return (
+        <>
+          <StepTitle>
+            POP!CK에서 사용하실
+            <br />
+            비밀번호를 입력해주세요.
+          </StepTitle>
+          <Field>
+            <InputWrapper hasError={Boolean(passwordError)}>
+              <StyledInput
+                value={password}
+                onChange={handlePasswordChange}
+                placeholder="비밀번호를 입력해주세요."
+                type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
+              />
+              <ToggleButton
+                type="button"
+                onClick={() => setShowPassword((previous) => !previous)}
+              >
+                {showPassword ? "숨기기" : "표시"}
+              </ToggleButton>
+            </InputWrapper>
+            {passwordError && <ErrorText>{passwordError}</ErrorText>}
+          </Field>
+
+          <Field>
+            <InputWrapper hasError={Boolean(passwordConfirmError)}>
+              <StyledInput
+                value={passwordConfirm}
+                onChange={handlePasswordConfirmChange}
+                placeholder="비밀번호를 다시 한 번 입력해주세요."
+                type="password"
+                autoComplete="new-password"
+              />
+            </InputWrapper>
+            {passwordConfirmError && (
+              <ErrorText>{passwordConfirmError}</ErrorText>
+            )}
+          </Field>
+        </>
+      );
+    }
+
+    return (
+      <>
+        <StepTitle>
+          POP!CK에서 사용하실
+          <br />
+          닉네임을 입력해주세요.
+        </StepTitle>
+        <Field>
+          <InputWrapper>
+            <StyledInput
+              value={nickname}
+              onChange={(event) => setNickname(event.target.value)}
+              placeholder="닉네임을 입력해주세요."
+            />
+          </InputWrapper>
+        </Field>
+      </>
+    );
   };
 
   return (
     <Container>
-      <ProgressBarContainer>
-        <ProgressBar>
-          <ProgressFill width={(currentStep / 3) * 100} />
-        </ProgressBar>
-      </ProgressBarContainer>
+      <Card onSubmit={handleNext}>
+        <Content>
+          <StepIndicator>Step {currentStep} / 3</StepIndicator>
+          <StepArea>{renderStepContent()}</StepArea>
+        </Content>
 
-      <ContentContainer>{renderStepContent()}</ContentContainer>
-
-      <ButtonContainer>
-        <NextButton
-          isActive={
-            currentStep === 1
-              ? isIdValid
-              : currentStep === 2
-              ? isPasswordValid()
-              : currentStep === 3
-              ? nickname.trim().length > 0
-              : false
-          }
-          onPress={handleNext}
-          disabled={
-            currentStep === 1
-              ? !isIdValid
-              : currentStep === 2
-              ? !isPasswordValid()
-              : currentStep === 3
-              ? nickname.trim().length === 0
-              : false
-          }>
-          <NextButtonText>
-            {currentStep === 3 ? '완료' : '다음으로'}
-          </NextButtonText>
-        </NextButton>
-
-        <LoginContainer>
-          <LoginText>이미 계정이 있으신가요? </LoginText>
-          <LoginLink onPress={onLoginPress}>
-            <LoginLinkText>로그인</LoginLinkText>
-          </LoginLink>
-        </LoginContainer>
-      </ButtonContainer>
+        <ButtonGroup>
+          <PrimaryButton type="submit" disabled={!canSubmit || isSubmitting}>
+            {currentStep === 3 ? "완료" : "다음으로"}
+          </PrimaryButton>
+          <LoginPrompt>
+            <PromptText>이미 계정이 있으신가요?</PromptText>
+            <TextButton type="button" onClick={onLoginPress}>
+              로그인
+            </TextButton>
+          </LoginPrompt>
+        </ButtonGroup>
+      </Card>
     </Container>
   );
 };
 
-const Container = styled.View`
-  flex: 1;
-  background-color: white;
-`;
-
-const ProgressBarContainer = styled.View`
-  align-items: center;
-  margin-top: 20%;
-  margin-bottom: 10%;
-`;
-
-const ProgressBar = styled.View`
-  height: 6px;
-  width: 344px;
-  background-color: #e8e8e8;
-  border-radius: 3px;
-`;
-
-const ProgressFill = styled.View<{width: number}>`
+const Container = styled.div`
+  width: 100%;
   height: 100%;
-  width: ${props => props.width}%;
-  background-color: #f63f4e;
-  border-radius: 3px;
-`;
-
-const ContentContainer = styled.View`
-  flex: 1;
-  padding: 28px;
-`;
-
-const StepTitle = styled.Text`
-  font-size: 24px;
-  font-weight: bold;
-  margin-bottom: 40px;
-  line-height: 32px;
-`;
-
-const InputContainer = styled.View`
-  margin-bottom: 12px;
-`;
-
-const InputWrapper = styled.View<{hasError?: boolean}>`
-  flex-direction: row;
-  align-items: center;
-  border: 1px solid ${props => (props.hasError ? '#FF4444' : '#E8E8E8')};
-  border-radius: 8px;
-`;
-
-const StyledInput = styled.TextInput`
-  flex: 1;
-  padding: 15px;
-  font-size: 16px;
-`;
-
-const DuplicateCheckButton = styled.TouchableOpacity`
-  border: #f63f4e;
-  padding: 8px 16px;
-  margin-right: 8px;
-  border-radius: 20px;
-  align-items: center;
+  display: flex;
   justify-content: center;
-`;
-
-const DuplicateCheckText = styled.Text`
-  color: #f63f4e;
-  font-weight: 600;
-  font-size: 13px;
-`;
-
-const ErrorContainer = styled.View`
-  flex-direction: row;
   align-items: center;
-  margin-top: 8px;
-  margin-left: 4px;
+  background-color: #ffffff;
+  padding: 40px 20px;
 `;
 
-const ErrorIcon = styled.Image`
-  width: 14px;
-  height: 14px;
-  margin-right: 6px;
+const Card = styled.form`
+  width: 100%;
+  max-width: 420px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 `;
 
-const ErrorText = styled.Text`
+const Content = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 24px;
+`;
+
+const StepIndicator = styled.span`
+  font-size: 13px;
+  font-weight: 600;
+  color: #05baae;
+  text-transform: uppercase;
+  text-align: center;
+`;
+
+const StepArea = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+`;
+
+const StepTitle = styled.h1`
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 32px;
+  margin: 0;
+  text-align: center;
+`;
+
+const Field = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+const InputWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  border: 1px solid ${({ hasError }) => (hasError ? "#ff4444" : "#e8e8e8")};
+  border-radius: 8px;
+  padding: 0 12px;
+  background-color: #ffffff;
+  transition: border-color 0.2s ease;
+
+  &:focus-within {
+    border-color: #05baae;
+  }
+`;
+
+const StyledInput = styled.input`
+  flex: 1;
+  border: none;
+  padding: 14px 0;
+  font-size: 16px;
+  outline: none;
+  background: transparent;
+  color: #111111;
+
+  ::placeholder {
+    color: #a7a7a7;
+  }
+`;
+
+const ToggleButton = styled.button`
+  border: none;
+  background: none;
+  color: #05baae;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0 4px;
+`;
+
+const OutlineButton = styled.button`
+  border: 1px solid #05baae;
+  background-color: transparent;
+  color: #05baae;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  margin-left: 8px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+
+  &:hover {
+    background-color: rgba(5, 186, 174, 0.1);
+  }
+`;
+
+const ErrorText = styled.span`
   color: #ff4444;
   font-size: 14px;
 `;
 
-const EyeButton = styled.TouchableOpacity`
-  padding: 10px;
-`;
-
-const EyeIcon = styled.Image`
-  width: 20px;
-  height: 13.64px;
-`;
-
-const NextButton = styled.TouchableOpacity<{isActive: boolean}>`
-  width: 90%;
-  padding: 15px;
-  background-color: ${props => (props.isActive ? '#F63F4E' : '#A8A8A8')};
-  border-radius: 8px;
+const ButtonGroup = styled.div`
+  width: 100%;
   align-items: center;
-  align-self: center;
-  margin-vertical: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 0 auto;
+  margin-bottom: 16px;
 `;
 
-const NextButtonText = styled.Text`
-  color: white;
+const PrimaryButton = styled.button`
+  width: 100%;
+  width: 340px;
+  padding: 15px;
+  background-color: ${({ disabled }) => (disabled ? "#bde5e1" : "#05baae")};
+  color: #ffffff;
   font-size: 18px;
   font-weight: 600;
+  border: none;
+  border-radius: 16px;
+  cursor: ${({ disabled }) => (disabled ? "not-allowed" : "pointer")};
+  transition: background-color 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    background-color: ${({ disabled }) => (disabled ? "#bde5e1" : "#049f9a")};
+  }
+
+  &:active {
+    transform: ${({ disabled }) => (disabled ? "none" : "translateY(1px)")};
+  }
 `;
 
-const LoginContainer = styled.View`
-  flex-direction: row;
+const LoginPrompt = styled.div`
+  display: flex;
   justify-content: center;
   align-items: center;
-  margin-top: 20px;
-  margin-bottom: 40px;
+  gap: 6px;
+  margin-top: 2px;
 `;
 
-const LoginText = styled.Text`
+const PromptText = styled.span`
   font-size: 14px;
-  color: #666;
+  color: #666666;
 `;
 
-const LoginLink = styled.TouchableOpacity``;
-
-const LoginLinkText = styled.Text`
+const TextButton = styled.button`
+  border: none;
+  background: none;
+  color: #05baae;
   font-size: 14px;
-  color: #f63f4e;
   font-weight: 600;
-  text-decoration-line: underline;
-`;
-
-const ButtonContainer = styled.View`
-  margin-top: auto;
-  width: 100%;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
 `;
 
 export default SignUpScreen;

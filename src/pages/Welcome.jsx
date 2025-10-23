@@ -2,7 +2,8 @@ import styled from "styled-components";
 import logo from "../assets/logo.png";
 
 const Container = styled.div`
-  min-height: 100vh;
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -35,7 +36,7 @@ const ButtonSection = styled.div`
   gap: 16px;
 `;
 
-const StartButton = styled.button`
+const PrimaryButton = styled.button`
   width: 100%;
   background-color: #05baae;
   color: #ffffff;
@@ -48,7 +49,7 @@ const StartButton = styled.button`
   transition: background-color 0.2s ease;
 
   &:hover {
-    background-color: #05baae;
+    background-color: #049f9a;
   }
 `;
 
@@ -58,7 +59,7 @@ const LoginContainer = styled.div`
   justify-content: center;
   gap: 4px;
   margin-top: 6px;
-  margin-bottom: 32px;
+  margin-bottom: 44px;
 `;
 
 const LoginText = styled.span`
@@ -81,12 +82,12 @@ const Welcome = ({ onSignUp = () => {}, onLogin = () => {} }) => {
   return (
     <Container>
       <LogoContainer>
-        <Logo src={logo} alt="WeFit" />
+        <Logo src={logo} alt="WEFIT" />
       </LogoContainer>
       <ButtonSection>
-        <StartButton type="button" onClick={onSignUp}>
+        <PrimaryButton type="button" onClick={onSignUp}>
           시작하기
-        </StartButton>
+        </PrimaryButton>
         <LoginContainer>
           <LoginText>만약 계정이 있다면?</LoginText>
           <LoginLink type="button" onClick={onLogin}>
