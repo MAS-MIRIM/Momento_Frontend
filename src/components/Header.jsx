@@ -20,7 +20,6 @@ const Head = styled.div`
   align-items: center;
   justify-content: space-between;
   padding: 52px 12px;
-  margin-bottom: 30px;
 `;
 
 const Header = () => {

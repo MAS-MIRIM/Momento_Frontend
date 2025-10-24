@@ -8,12 +8,21 @@ import { useAuth } from "../contexts/AuthContext.jsx";
 const Container = styled.div`
   width: 100%;
   height: 100%;
+  padding: 20px;
   background: #fff;
   display: flex;
   flex-direction: column;
-  align-items: center;
   position: relative;
-  padding: 20px;
+`;
+
+const ScrollWrapper = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 12px;
 `;
 
 const ClassLine = styled.div`
@@ -236,12 +245,15 @@ const TimetablePage = () => {
     setIsTimetableLoading(true);
     setTimetableError("");
 
-    ApiService.getTimetable({
-      schoolCode,
-      grade,
-      classNumber: klass,
-      date: yyyymmdd,
-    }, token)
+    ApiService.getTimetable(
+      {
+        schoolCode,
+        grade,
+        classNumber: klass,
+        date: yyyymmdd,
+      },
+      token
+    )
       .then((data) => {
         if (ignore) return;
         setTimetableDays(Array.isArray(data?.days) ? data.days : []);
@@ -274,10 +286,13 @@ const TimetablePage = () => {
     setIsMealLoading(true);
     setMealError("");
 
-    ApiService.getMeal({
-      schoolCode,
-      date: yyyymmdd,
-    }, token)
+    ApiService.getMeal(
+      {
+        schoolCode,
+        date: yyyymmdd,
+      },
+      token
+    )
       .then((data) => {
         if (ignore) return;
         setMealData(data || null);
@@ -335,110 +350,113 @@ const TimetablePage = () => {
   return (
     <Container>
       <Header />
-
-      {canRequestData ? (
-        <>
-          <ClassLine>
-            {grade}학년 {klass}반
-          </ClassLine>
-          <SubLine>{user?.school ?? "학교 정보 없음"}</SubLine>
-        </>
-      ) : (
-        <HelperBox>
-          시간표를 불러오려면 학교, 학년, 반 정보가 필요합니다.
-        </HelperBox>
-      )}
-
-      <DateBar>
-        <DateBtn onClick={goPrevDate}>‹</DateBtn>
-        <DateText>{fmtKoreanDate(date)}</DateText>
-        <DateBtn onClick={goNextDate}>›</DateBtn>
-      </DateBar>
-
-      {canRequestData &&
-        (isTimetableLoading ? (
-          <LoadingBox>시간표를 불러오는 중입니다...</LoadingBox>
-        ) : timetableError ? (
-          <ErrorBox>{timetableError}</ErrorBox>
-        ) : (
-          <TimetableWrap>
-            {periods.length > 0 ? (
-              periods.map((period, idx) => {
-                const {
-                  period: periodNo,
-                  subject,
-                  teacher,
-                  teacher_by_class: teacherByClass,
-                } = period;
-                let teacherText = teacher || "";
-                if (!teacherText && teacherByClass) {
-                  const entries = Object.entries(teacherByClass)
-                    .map(([klassLabel, name]) => `${klassLabel}: ${name}`)
-                    .join(", ");
-                  teacherText = entries;
-                }
-                return (
-                  <PeriodRow key={periodNo || `${subject}-${idx}`}>
-                    <PeriodBadge>
-                      {periodNo ? `${periodNo}교시` : "교시"}
-                    </PeriodBadge>
-                    <Subject>
-                      {subject || "과목 미정"}
-                      {teacherText && <Teacher>{teacherText}</Teacher>}
-                    </Subject>
-                  </PeriodRow>
-                );
-              })
-            ) : (
-              <HelperBox>선택한 날짜의 시간표가 없습니다.</HelperBox>
-            )}
-          </TimetableWrap>
-        ))}
-
-      <MealSection>
-        <SectionTitle>급식</SectionTitle>
+      <ScrollWrapper>
         {canRequestData ? (
-          isMealLoading ? (
-            <LoadingBox>급식 정보를 불러오는 중입니다...</LoadingBox>
-          ) : mealError ? (
-            <ErrorBox>{mealError}</ErrorBox>
-          ) : formattedMeal ? (
-            (() => {
-              const titleMap = {
-                breakfast: "아침",
-                lunch: "점심",
-                dinner: "저녁",
-              };
-              const cards = ["breakfast", "lunch", "dinner"].flatMap((key) => {
-                const items = formattedMeal[key];
-                if (!items || items.length === 0) return [];
-                return [
-                  <MealCard key={key}>
-                    <MealHeading>{titleMap[key]}</MealHeading>
-                    <MealList>
-                      {items.map((menu, idx) => (
-                        <MealItem key={`${key}-${idx}`}>{menu}</MealItem>
-                      ))}
-                    </MealList>
-                  </MealCard>,
-                ];
-              });
-              if (cards.length === 0) {
-                return <HelperBox>등록된 급식 정보가 없습니다.</HelperBox>;
-              }
-              return <MealCards>{cards}</MealCards>;
-            })()
-          ) : (
-            <HelperBox>급식 정보를 찾을 수 없습니다.</HelperBox>
-          )
+          <>
+            <ClassLine>
+              {grade}학년 {klass}반
+            </ClassLine>
+            <SubLine>{user?.school ?? "학교 정보 없음"}</SubLine>
+          </>
         ) : (
           <HelperBox>
-            학교 정보를 찾을 수 없어 급식을 표시할 수 없습니다.
+            시간표를 불러오려면 학교, 학년, 반 정보가 필요합니다.
           </HelperBox>
         )}
-      </MealSection>
 
-      <BottomPad />
+        <DateBar>
+          <DateBtn onClick={goPrevDate}>‹</DateBtn>
+          <DateText>{fmtKoreanDate(date)}</DateText>
+          <DateBtn onClick={goNextDate}>›</DateBtn>
+        </DateBar>
+
+        {canRequestData &&
+          (isTimetableLoading ? (
+            <LoadingBox>시간표를 불러오는 중입니다...</LoadingBox>
+          ) : timetableError ? (
+            <ErrorBox>{timetableError}</ErrorBox>
+          ) : (
+            <TimetableWrap>
+              {periods.length > 0 ? (
+                periods.map((period, idx) => {
+                  const {
+                    period: periodNo,
+                    subject,
+                    teacher,
+                    teacher_by_class: teacherByClass,
+                  } = period;
+                  let teacherText = teacher || "";
+                  if (!teacherText && teacherByClass) {
+                    const entries = Object.entries(teacherByClass)
+                      .map(([klassLabel, name]) => `${klassLabel}: ${name}`)
+                      .join(", ");
+                    teacherText = entries;
+                  }
+                  return (
+                    <PeriodRow key={periodNo || `${subject}-${idx}`}>
+                      <PeriodBadge>
+                        {periodNo ? `${periodNo}교시` : "교시"}
+                      </PeriodBadge>
+                      <Subject>
+                        {subject || "과목 미정"}
+                        {teacherText && <Teacher>{teacherText}</Teacher>}
+                      </Subject>
+                    </PeriodRow>
+                  );
+                })
+              ) : (
+                <HelperBox>선택한 날짜의 시간표가 없습니다.</HelperBox>
+              )}
+            </TimetableWrap>
+          ))}
+
+        <MealSection>
+          <SectionTitle>급식</SectionTitle>
+          {canRequestData ? (
+            isMealLoading ? (
+              <LoadingBox>급식 정보를 불러오는 중입니다...</LoadingBox>
+            ) : mealError ? (
+              <ErrorBox>{mealError}</ErrorBox>
+            ) : formattedMeal ? (
+              (() => {
+                const titleMap = {
+                  breakfast: "아침",
+                  lunch: "점심",
+                  dinner: "저녁",
+                };
+                const cards = ["breakfast", "lunch", "dinner"].flatMap(
+                  (key) => {
+                    const items = formattedMeal[key];
+                    if (!items || items.length === 0) return [];
+                    return [
+                      <MealCard key={key}>
+                        <MealHeading>{titleMap[key]}</MealHeading>
+                        <MealList>
+                          {items.map((menu, idx) => (
+                            <MealItem key={`${key}-${idx}`}>{menu}</MealItem>
+                          ))}
+                        </MealList>
+                      </MealCard>,
+                    ];
+                  }
+                );
+                if (cards.length === 0) {
+                  return <HelperBox>등록된 급식 정보가 없습니다.</HelperBox>;
+                }
+                return <MealCards>{cards}</MealCards>;
+              })()
+            ) : (
+              <HelperBox>급식 정보를 찾을 수 없습니다.</HelperBox>
+            )
+          ) : (
+            <HelperBox>
+              학교 정보를 찾을 수 없어 급식을 표시할 수 없습니다.
+            </HelperBox>
+          )}
+        </MealSection>
+
+        <BottomPad />
+      </ScrollWrapper>
       <TabNavigation />
     </Container>
   );
