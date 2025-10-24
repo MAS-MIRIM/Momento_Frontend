@@ -11,6 +11,26 @@ const ErrorText = ({ children }) => (
   </StyledErrorText>
 );
 
+const EDUCATION_OFFICES = [
+  "서울특별시교육청",
+  "부산광역시교육청",
+  "대구광역시교육청",
+  "인천광역시교육청",
+  "광주광역시교육청",
+  "대전광역시교육청",
+  "울산광역시교육청",
+  "세종특별자치시교육청",
+  "경기도교육청",
+  "강원특별자치도교육청",
+  "충청북도교육청",
+  "충청남도교육청",
+  "전북특별자치도교육청",
+  "전라남도교육청",
+  "경상북도교육청",
+  "경상남도교육청",
+  "제주특별자치도교육청",
+];
+
 const SignUpScreen = ({
   onSignUpSuccess = () => {},
   onLoginPress = () => {},
@@ -18,34 +38,35 @@ const SignUpScreen = ({
   const [currentStep, setCurrentStep] = useState(0);
   const [role, setRole] = useState("");
 
-  const [userId, setUserId] = useState("");
-  const [password, setPassword] = useState("");
-  const [passwordConfirm, setPasswordConfirm] = useState("");
+  const [educationOffice, setEducationOffice] = useState("");
   const [schoolName, setSchoolName] = useState("");
   const [grade, setGrade] = useState("");
   const [classNumber, setClassNumber] = useState("");
   const [studentNumber, setStudentNumber] = useState("");
+
+  const [userId, setUserId] = useState("");
+  const [isIdValid, setIsIdValid] = useState(false);
+  const [isIdChecked, setIsIdChecked] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
+
+  // errors & submitting
   const [passwordError, setPasswordError] = useState("");
   const [passwordConfirmError, setPasswordConfirmError] = useState("");
   const [idError, setIdError] = useState("");
+  const [educationOfficeError, setEducationOfficeError] = useState("");
   const [schoolNameError, setSchoolNameError] = useState("");
   const [schoolDetailError, setSchoolDetailError] = useState("");
-  const [isIdValid, setIsIdValid] = useState(false);
-  const [isIdChecked, setIsIdChecked] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validatePassword = (pass) => {
     const hasMinLength = pass.length >= 8;
     const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(pass);
 
-    if (!hasMinLength) {
-      return "비밀번호는 8자리 이상이어야 합니다.";
-    }
-    if (!hasSpecialChar) {
-      return "특수문자를 포함해야 합니다.";
-    }
+    if (!hasMinLength) return "비밀번호는 8자리 이상이어야 합니다.";
+    if (!hasSpecialChar) return "특수문자를 포함해야 합니다.";
     return "";
   };
 
@@ -66,6 +87,7 @@ const SignUpScreen = ({
     }
     if (currentStep === 1) {
       return (
+        educationOffice.trim().length > 0 &&
         schoolName.trim().length > 0 &&
         grade.trim().length > 0 &&
         classNumber.trim().length > 0 &&
@@ -82,12 +104,13 @@ const SignUpScreen = ({
   }, [
     currentStep,
     role,
-    isIdValid,
-    isPasswordValid,
+    educationOffice,
     schoolName,
     grade,
     classNumber,
     studentNumber,
+    isIdValid,
+    isPasswordValid,
   ]);
 
   const checkIdDuplicate = () => {
@@ -95,29 +118,26 @@ const SignUpScreen = ({
       setIdError("아이디를 입력해주세요.");
       return;
     }
-
     if (userId.length < 2) {
       setIdError("아이디는 2자 이상이어야 합니다.");
       setIsIdValid(false);
       return;
     }
-
     setIdError("");
     setIsIdValid(true);
     setIsIdChecked(true);
     console.log("사용 가능한 아이디 형식입니다.");
   };
 
-  const handleIdChange = (event) => {
-    const { value } = event.target;
-    setUserId(value);
+  const handleIdChange = (e) => {
+    setUserId(e.target.value);
     setIsIdChecked(false);
     setIsIdValid(false);
     setIdError("");
   };
 
-  const handlePasswordChange = (event) => {
-    const { value } = event.target;
+  const handlePasswordChange = (e) => {
+    const value = e.target.value;
     setPassword(value);
     const error = validatePassword(value);
     setPasswordError(error);
@@ -129,8 +149,8 @@ const SignUpScreen = ({
     }
   };
 
-  const handlePasswordConfirmChange = (event) => {
-    const { value } = event.target;
+  const handlePasswordConfirmChange = (e) => {
+    const value = e.target.value;
     setPasswordConfirm(value);
     if (value && value !== password) {
       setPasswordConfirmError("비밀번호가 일치하지 않습니다.");
@@ -139,8 +159,8 @@ const SignUpScreen = ({
     }
   };
 
-  const handleNext = async (event) => {
-    event.preventDefault();
+  const handleNext = async (e) => {
+    e.preventDefault();
     if (!canSubmit || isSubmitting) return;
 
     if (currentStep === 0) {
@@ -150,6 +170,13 @@ const SignUpScreen = ({
 
     if (currentStep === 1) {
       let hasError = false;
+
+      if (!educationOffice.trim()) {
+        setEducationOfficeError("교육청을 선택해주세요.");
+        hasError = true;
+      } else {
+        setEducationOfficeError("");
+      }
 
       if (!schoolName.trim()) {
         setSchoolNameError("학교명을 입력해주세요.");
@@ -165,9 +192,7 @@ const SignUpScreen = ({
         setSchoolDetailError("");
       }
 
-      if (hasError) {
-        return;
-      }
+      if (hasError) return;
 
       setCurrentStep(2);
       return;
@@ -182,7 +207,6 @@ const SignUpScreen = ({
         setIdError("아이디 중복 확인을 해주세요.");
         return;
       }
-
       setIdError("");
       setCurrentStep(3);
       return;
@@ -192,27 +216,17 @@ const SignUpScreen = ({
       if (!isPasswordValid) return;
       setIsSubmitting(true);
       try {
-        // await ApiService.register({
-        //   userId,
-        //   password,
-        //   schoolName,
-        //   grade,
-        //   classNumber,
-        //   studentNumber,
-        //   role,
-        // });
-        // await ApiService.login({ userId, password });
+        // await ApiService.register({...});
+        // await ApiService.login({...});
 
         try {
-          console.log("Setting isFirstSignUp to true");
           // localStorage.setItem("isFirstSignUp", "true");
         } catch (storageError) {
           console.warn("Unable to access localStorage", storageError);
         }
         onSignUpSuccess();
-      } catch (error) {
-        console.error("Signup error (placeholder)", error);
-        console.error("회원가입 중 문제가 발생했습니다.");
+      } catch (err) {
+        console.error("Signup error (placeholder)", err);
       } finally {
         setIsSubmitting(false);
       }
@@ -266,59 +280,79 @@ const SignUpScreen = ({
             <br />
             학교를 입력해주세요.
           </StepTitle>
+
+          {/* 교육청 선택 */}
+          <Field>
+            <InputWrapper hasError={Boolean(educationOfficeError)}>
+              <StyledSelect
+                value={educationOffice}
+                onChange={(e) => {
+                  setEducationOffice(e.target.value);
+                  if (educationOfficeError) setEducationOfficeError("");
+                }}
+              >
+                <option value="">교육청을 선택하세요</option>
+                {EDUCATION_OFFICES.map((ofc) => (
+                  <option key={ofc} value={ofc}>
+                    {ofc}
+                  </option>
+                ))}
+              </StyledSelect>
+            </InputWrapper>
+            {educationOfficeError && (
+              <ErrorText>{educationOfficeError}</ErrorText>
+            )}
+          </Field>
+
+          {/* 학교명 */}
           <Field>
             <InputWrapper hasError={Boolean(schoolNameError)}>
               <StyledInput
                 value={schoolName}
-                onChange={(event) => {
-                  setSchoolName(event.target.value);
-                  if (schoolNameError) {
-                    setSchoolNameError("");
-                  }
+                onChange={(e) => {
+                  setSchoolName(e.target.value);
+                  if (schoolNameError) setSchoolNameError("");
                 }}
                 placeholder="학교명을 입력해주세요."
               />
             </InputWrapper>
             {schoolNameError && <ErrorText>{schoolNameError}</ErrorText>}
           </Field>
+
           <Field>
             <InlineFieldGroup>
               <InlineInputWrapper hasError={Boolean(schoolDetailError)}>
-                <StyledInput2
+                <StyledInputSmall
                   value={grade}
-                  onChange={(event) => {
-                    setGrade(event.target.value);
-                    if (schoolDetailError) {
-                      setSchoolDetailError("");
-                    }
+                  onChange={(e) => {
+                    setGrade(e.target.value);
+                    if (schoolDetailError) setSchoolDetailError("");
                   }}
                   placeholder="학년"
                   inputMode="numeric"
                 />
                 <InlineSuffix>학년</InlineSuffix>
               </InlineInputWrapper>
+
               <InlineInputWrapper hasError={Boolean(schoolDetailError)}>
-                <StyledInput2
+                <StyledInputSmall
                   value={classNumber}
-                  onChange={(event) => {
-                    setClassNumber(event.target.value);
-                    if (schoolDetailError) {
-                      setSchoolDetailError("");
-                    }
+                  onChange={(e) => {
+                    setClassNumber(e.target.value);
+                    if (schoolDetailError) setSchoolDetailError("");
                   }}
                   placeholder="반"
                   inputMode="numeric"
                 />
                 <InlineSuffix>반</InlineSuffix>
               </InlineInputWrapper>
+
               <InlineInputWrapper hasError={Boolean(schoolDetailError)}>
-                <StyledInput2
+                <StyledInputSmall
                   value={studentNumber}
-                  onChange={(event) => {
-                    setStudentNumber(event.target.value);
-                    if (schoolDetailError) {
-                      setSchoolDetailError("");
-                    }
+                  onChange={(e) => {
+                    setStudentNumber(e.target.value);
+                    if (schoolDetailError) setSchoolDetailError("");
                   }}
                   placeholder="번호"
                   inputMode="numeric"
@@ -359,6 +393,7 @@ const SignUpScreen = ({
       );
     }
 
+    // step 3
     return (
       <>
         <StepTitle>
@@ -367,6 +402,7 @@ const SignUpScreen = ({
           <br />
           비밀번호를 입력해주세요.
         </StepTitle>
+
         <Field>
           <InputWrapper hasError={Boolean(passwordError)}>
             <StyledInput
@@ -378,7 +414,7 @@ const SignUpScreen = ({
             />
             <ToggleButton
               type="button"
-              onClick={() => setShowPassword((previous) => !previous)}
+              onClick={() => setShowPassword((p) => !p)}
             >
               {showPassword ? "숨기기" : "표시"}
             </ToggleButton>
@@ -429,6 +465,8 @@ const SignUpScreen = ({
     </Container>
   );
 };
+
+/* ===== styled ===== */
 
 const Container = styled.div`
   width: 100%;
@@ -513,10 +551,9 @@ const InputWrapper = styled.div`
   max-width: 340px;
   border: 1px solid ${({ hasError }) => (hasError ? "#ff4444" : "#ededed")};
   border-radius: 15px;
-  padding: 0 14px;
+  padding: 0 12px;
   background-color: #ffffff;
   transition: border-color 0.2s ease;
-
   &:focus-within {
     border-color: #05baae;
   }
@@ -525,39 +562,49 @@ const InputWrapper = styled.div`
 const InlineInputWrapper = styled(InputWrapper)`
   flex: 1;
   max-width: none;
-  padding-right: 10px;
+  padding-right: 8px;
 `;
 
 const StyledInput = styled.input`
   flex: 1;
   font-family: "Pretendard";
   border: none;
-  padding: 14px 0;
+  padding: 12px 0;
   font-size: 16px;
   outline: none;
   background: transparent;
   color: #111111;
-
   ::placeholder {
     color: #a7a7a7;
     font-family: "Pretendard";
   }
 `;
 
-const StyledInput2 = styled.input`
+const StyledInputSmall = styled.input`
   flex: 1;
   font-family: "Pretendard";
   border: none;
-  padding: 14px 0;
-  font-size: 16px;
+  width: 30px;
+  padding: 12px 0;
+  font-size: 14px;
   outline: none;
   background: transparent;
   color: #111111;
-
   ::placeholder {
     color: #a7a7a7;
     font-family: "Pretendard";
   }
+`;
+
+const StyledSelect = styled.select`
+  flex: 1;
+  font-family: "Pretendard";
+  border: none;
+  padding: 12px 0;
+  font-size: 16px;
+  outline: none;
+  background: transparent;
+  color: #111111;
 `;
 
 const ToggleButton = styled.button`
@@ -582,7 +629,6 @@ const OutlineButton = styled.button`
   cursor: pointer;
   margin-left: 8px;
   transition: background-color 0.2s ease, color 0.2s ease;
-
   &:hover {
     background-color: rgba(5, 186, 174, 0.1);
   }
@@ -626,7 +672,7 @@ const ButtonGroup = styled.div`
 
 const PrimaryButton = styled.button`
   width: 100%;
-  width: 340px;
+  max-width: 340px;
   padding: 15px;
   background-color: ${({ disabled }) => (disabled ? "#bde5e1" : "#05baae")};
   color: #ffffff;
@@ -636,11 +682,9 @@ const PrimaryButton = styled.button`
   border-radius: 16px;
   cursor: ${({ disabled }) => (disabled ? "not-allowed" : "pointer")};
   transition: background-color 0.2s ease, transform 0.2s ease;
-
   &:hover {
     background-color: ${({ disabled }) => (disabled ? "#bde5e1" : "#049f9a")};
   }
-
   &:active {
     transform: ${({ disabled }) => (disabled ? "none" : "translateY(1px)")};
   }
@@ -687,7 +731,6 @@ const RoleCard = styled.button`
   cursor: pointer;
   text-align: center;
   transition: border-color 0.2s ease, background-color 0.2s ease;
-
   &:hover {
     border-color: #05baae;
     background: rgba(5, 186, 174, 0.06);
