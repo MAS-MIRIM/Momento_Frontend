@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import styled from "styled-components";
-import logo from "../assets/logo.png";
+import Header from "../components/Header";
 import TabNavigation from "../components/TabNavigation";
 
 const Container = styled.div`
@@ -12,20 +12,6 @@ const Container = styled.div`
   align-items: center;
   position: relative;
   padding: 20px;
-`;
-
-const Header = styled.header`
-  width: 100%;
-  max-width: 960px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding-top: 8px;
-`;
-
-const Logo = styled.img`
-  width: 120px;
-  height: auto;
 `;
 
 const ClassLine = styled.div`
@@ -194,8 +180,8 @@ const EXAMPLE_LUNCH = [
 ];
 
 const TimetablePage = () => {
-  const [grade, setGrade] = useState(2);
-  const [klass, setKlass] = useState(2);
+  const grade = 2;
+  const klass = 2;
   const [date, setDate] = useState(new Date(2025, 9, 24));
   const [lunchIdx, setLunchIdx] = useState(0);
 
@@ -219,9 +205,7 @@ const TimetablePage = () => {
 
   return (
     <Container>
-      <Header>
-        <Logo src={logo} alt="logo" />
-      </Header>
+      <Header />
 
       <ClassLine>
         {grade}학년 {klass}반
