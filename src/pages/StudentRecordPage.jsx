@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import styled from "styled-components";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 
 const Container = styled.div`
@@ -13,11 +13,21 @@ const Container = styled.div`
   padding: 20px;
 `;
 
+const ScrollWrapper = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+`;
+
 const PageWrap = styled.div`
   width: 100%;
   max-width: 720px;
 `;
 
+// ⭐ 이 부분들이 누락되어 있었습니다!
 const Title = styled.h2`
   margin: 12px 0 4px;
   font-size: 22px;
@@ -125,9 +135,9 @@ const SaveMessage = styled.p`
   color: #007f79;
 `;
 
+// 컴포넌트는 원래대로 유지
 const StudentRecordPage = () => {
   const navigate = useNavigate();
-  const { studentId } = useParams();
   const location = useLocation();
   const state = location.state || {};
 
@@ -136,7 +146,7 @@ const StudentRecordPage = () => {
   const classroomLabel =
     state.grade && state.classNo
       ? `${state.grade}학년 ${state.classNo}반`
-      : "학급 정보 없음";
+      : "2학년 2반";
   const mission = state.mission || "오늘 미션 정보 없음";
 
   const defaultRecord = useMemo(() => {
@@ -162,7 +172,7 @@ const StudentRecordPage = () => {
   const handleSubmit = (event) => {
     event.preventDefault();
     console.log("생기부 저장:", {
-      studentId,
+      studentId: state.id,
       record,
     });
     setSaveMessage("생기부 초안이 임시 저장되었습니다.");
@@ -179,7 +189,7 @@ const StudentRecordPage = () => {
         <PageWrap>
           <Title>{studentName} 생기부 작성</Title>
           <Subtitle>
-            {classroomLabel} {studentNumber} {studentId && `(ID: ${studentId})`}
+            {classroomLabel} {studentNumber} {state.id && `(ID: ${state.id})`}
           </Subtitle>
 
           <InfoCard>
