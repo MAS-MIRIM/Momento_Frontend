@@ -10,10 +10,10 @@ import ProfileIcon from "../assets/icons/profile.svg";
 const TAB_HEIGHT = 92;
 
 const BottomTabWrap = styled.nav`
-  position: fixed;
+  position: absolute;
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: 12px;
   height: ${TAB_HEIGHT}px;
   padding: 12px 24px calc(28px + env(safe-area-inset-bottom, 0px));
   background-color: rgba(255, 255, 255, 0.96);
@@ -39,6 +39,7 @@ const Pill = styled.div`
 
 const Label = styled.span`
   font-size: 12px;
+  font-weight: 600;
   color: #05baae;
   white-space: nowrap;
   overflow: hidden;
@@ -65,7 +66,7 @@ const TabItem = styled(NavLink)`
 
   &.active ${Pill} {
     background: #daf2f0;
-    padding: 10px 14px;
+    padding: 10px 20px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
   }
 
