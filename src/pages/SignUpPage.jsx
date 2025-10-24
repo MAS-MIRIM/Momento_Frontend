@@ -1,6 +1,15 @@
 import { useMemo, useState } from "react";
 import styled from "styled-components";
+import logo from "../assets/logo.png";
+import error from "../assets/error.png";
 // import ApiService from "../utils/api"; // TODO: 연결되면 API 호출 활성화
+
+const ErrorText = ({ children }) => (
+  <StyledErrorText>
+    <ErrorIcon src={error} alt="경고" />
+    {children}
+  </StyledErrorText>
+);
 
 const SignUpScreen = ({
   onSignUpSuccess = () => {},
@@ -38,8 +47,10 @@ const SignUpScreen = ({
       password.length >= 8 &&
       /[!@#$%^&*(),.?":{}|<>]/.test(password) &&
       password === passwordConfirm &&
-      passwordConfirm.length > 0,
-    [password, passwordConfirm]
+      passwordConfirm.length > 0 &&
+      !passwordError &&
+      !passwordConfirmError,
+    [password, passwordConfirm, passwordError, passwordConfirmError]
   );
 
   const canSubmit = useMemo(() => {
@@ -70,7 +81,7 @@ const SignUpScreen = ({
     setIdError("");
     setIsIdValid(true);
     setIsIdChecked(true);
-    window.alert("사용 가능한 아이디 형식입니다.");
+    console.log("사용 가능한 아이디 형식입니다.");
   };
 
   const handleIdChange = (event) => {
@@ -139,14 +150,14 @@ const SignUpScreen = ({
         // await ApiService.register(userId, password, nickname);
         // await ApiService.login(userId, password);
         try {
-          window.localStorage.setItem("isFirstSignUp", "true");
+          console.log("Setting isFirstSignUp to true");
         } catch (storageError) {
           console.warn("Unable to access localStorage", storageError);
         }
         onSignUpSuccess();
       } catch (error) {
         console.error("Signup error (placeholder)", error);
-        window.alert("회원가입 중 문제가 발생했습니다.");
+        console.error("회원가입 중 문제가 발생했습니다.");
       } finally {
         setIsSubmitting(false);
       }
@@ -158,7 +169,8 @@ const SignUpScreen = ({
       return (
         <>
           <StepTitle>
-            POP!CK에서 사용하실
+            <LogoImg src={logo} alt="로고" />
+            에서 사용하실
             <br />
             아이디를 입력해주세요.
           </StepTitle>
@@ -184,7 +196,8 @@ const SignUpScreen = ({
       return (
         <>
           <StepTitle>
-            POP!CK에서 사용하실
+            <LogoImg src={logo} alt="로고" />
+            에서 사용하실
             <br />
             비밀번호를 입력해주세요.
           </StepTitle>
@@ -228,7 +241,8 @@ const SignUpScreen = ({
     return (
       <>
         <StepTitle>
-          POP!CK에서 사용하실
+          <LogoImg src={logo} alt="로고" />
+          에서 사용하실
           <br />
           닉네임을 입력해주세요.
         </StepTitle>
@@ -249,7 +263,6 @@ const SignUpScreen = ({
     <Container>
       <Card onSubmit={handleNext}>
         <Content>
-          <StepIndicator>Step {currentStep} / 3</StepIndicator>
           <StepArea>{renderStepContent()}</StepArea>
         </Content>
 
@@ -295,40 +308,47 @@ const Content = styled.div`
   gap: 24px;
 `;
 
-const StepIndicator = styled.span`
-  font-size: 13px;
-  font-weight: 600;
-  color: #05baae;
-  text-transform: uppercase;
-  text-align: center;
-`;
-
 const StepArea = styled.div`
   display: flex;
   flex-direction: column;
   gap: 16px;
+  align-items: center;
+`;
+
+const LogoImg = styled.img`
+  width: 80px;
+  height: auto;
+  margin-right: 8px;
+  vertical-align: middle;
+  margin-bottom: 8px;
 `;
 
 const StepTitle = styled.h1`
   font-size: 24px;
   font-weight: 700;
-  line-height: 32px;
+  line-height: 36px;
   margin: 0;
-  text-align: center;
+  text-align: left;
+  width: 340px;
+  margin-bottom: 8px;
 `;
 
 const Field = styled.div`
   display: flex;
   flex-direction: column;
   gap: 8px;
+  align-items: center;
+  font-family: "Pretendard";
 `;
 
 const InputWrapper = styled.div`
   display: flex;
+  font-family: "Pretendard";
   align-items: center;
-  border: 1px solid ${({ hasError }) => (hasError ? "#ff4444" : "#e8e8e8")};
-  border-radius: 8px;
-  padding: 0 12px;
+  width: 340px;
+  border: 1px solid ${({ hasError }) => (hasError ? "#ff4444" : "#ededed")};
+  border-radius: 15px;
+  padding: 0 14px;
   background-color: #ffffff;
   transition: border-color 0.2s ease;
 
@@ -339,6 +359,7 @@ const InputWrapper = styled.div`
 
 const StyledInput = styled.input`
   flex: 1;
+  font-family: "Pretendard";
   border: none;
   padding: 14px 0;
   font-size: 16px;
@@ -348,6 +369,7 @@ const StyledInput = styled.input`
 
   ::placeholder {
     color: #a7a7a7;
+    font-family: "Pretendard";
   }
 `;
 
@@ -364,6 +386,7 @@ const ToggleButton = styled.button`
 const OutlineButton = styled.button`
   border: 1px solid #05baae;
   background-color: transparent;
+  font-family: "Pretendard";
   color: #05baae;
   font-size: 13px;
   font-weight: 600;
@@ -378,9 +401,22 @@ const OutlineButton = styled.button`
   }
 `;
 
-const ErrorText = styled.span`
+const ErrorIcon = styled.img`
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
+  flex-shrink: 0;
+`;
+
+const StyledErrorText = styled.span`
   color: #ff4444;
   font-size: 14px;
+  width: 340px;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  padding-left: 2px;
+  margin-top: 4px;
 `;
 
 const ButtonGroup = styled.div`
