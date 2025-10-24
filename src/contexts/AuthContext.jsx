@@ -54,6 +54,14 @@ export const AuthProvider = ({ children }) => {
         setError(null);
         const profile = await ApiService.getProfile(activeToken);
         setUser(profile);
+        if (import.meta.env.DEV) {
+          console.log("[MITHON] 교육청 코드:", profile.educationOfficeCode ?? "");
+          if (profile.schoolCode) {
+            console.log("[MITHON] 학교 코드:", profile.schoolCode);
+          } else {
+            console.log("[MITHON] 학교 코드 없음");
+          }
+        }
         return profile;
       } catch (err) {
         console.error("Failed to fetch profile", err);

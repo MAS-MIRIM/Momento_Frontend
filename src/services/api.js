@@ -1,7 +1,23 @@
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(
-  /\/$/,
-  ""
-);
+const DEFAULT_BASE_URL = import.meta.env.DEV ? "/api" : "https://api.hjun.kr";
+
+const normalizeBaseUrl = (raw) => {
+  const input = (raw || "").trim();
+  if (!input) {
+    return DEFAULT_BASE_URL;
+  }
+
+  if (input.startsWith("/")) {
+    return input.replace(/\/$/, "") || "/";
+  }
+
+  if (/^https?:\/\//i.test(input)) {
+    return input.replace(/\/$/, "");
+  }
+
+  return `https://${input}`.replace(/\/$/, "");
+};
+
+const API_BASE_URL = normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL);
 
 const buildUrl = (path) => {
   if (!path.startsWith("/")) {
@@ -29,6 +45,10 @@ const parseResponse = async (response) => {
 
 const defaultHeaders = {
   Accept: "application/json",
+};
+
+const jsonHeaders = {
+  ...defaultHeaders,
   "Content-Type": "application/json",
 };
 
@@ -36,7 +56,7 @@ const ApiService = {
   async register(payload) {
     const response = await fetch(buildUrl("/user/register"), {
       method: "POST",
-      headers: defaultHeaders,
+      headers: jsonHeaders,
       body: JSON.stringify(payload),
     });
     return parseResponse(response);
@@ -45,7 +65,7 @@ const ApiService = {
   async login(userId, password) {
     const response = await fetch(buildUrl("/auth/login"), {
       method: "POST",
-      headers: defaultHeaders,
+      headers: jsonHeaders,
       body: JSON.stringify({ userId, password }),
     });
     return parseResponse(response);

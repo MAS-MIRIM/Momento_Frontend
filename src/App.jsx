@@ -8,6 +8,7 @@ import CalendarPage from "./pages/CalendarPage";
 import ClockPage from "./pages/ClockPage";
 import TimetablePage from "./pages/TimetablePage";
 import ProfilePage from "./pages/ProfilePage";
+import StudentPage from "./pages/StudentPage";
 
 const App = () => {
   return (
@@ -21,6 +22,7 @@ const App = () => {
         <Route path="/clock" element={<ClockRoute />} />
         <Route path="/timetable" element={<TimetableRoute />} />
         <Route path="/profile" element={<ProfileRoute />} />
+        <Route path="/students" element={<StudentRoute />} />
       </Routes>
     </BrowserRouter>
   );
@@ -101,6 +103,14 @@ const ProfileRoute = () => {
   return (
     <div className="app-container">
       <ProfilePage />
+    </div>
+  );
+};
+
+const StudentRoute = () => {
+  return (
+    <div className="app-container">
+      <StudentPage />
     </div>
   );
 };

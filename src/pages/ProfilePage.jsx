@@ -184,9 +184,7 @@ const ProfilePage = () => {
   if (!user) {
     return (
       <Container>
-        <EmptyState>
-          로그인 후 프로필 정보를 확인할 수 있습니다.
-        </EmptyState>
+        <EmptyState>로그인 후 프로필 정보를 확인할 수 있습니다.</EmptyState>
         <TabNavigation />
       </Container>
     );

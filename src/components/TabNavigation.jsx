@@ -1,11 +1,12 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 import styled from "styled-components";
-
 import HomeIcon from "../assets/icons/home.svg";
 import ClockIcon from "../assets/icons/clock.svg";
 import CalenderIcon from "../assets/icons/calender.svg";
 import ProfileIcon from "../assets/icons/profile.svg";
+import StudentIcon from "../assets/icons/student.svg";
+import { useAuth } from "../contexts/AuthContext.jsx";
 
 const TAB_HEIGHT = 92;
 
@@ -78,58 +79,62 @@ const TabItem = styled(NavLink)`
 `;
 
 const TabNavigation = () => {
+  const { user } = useAuth();
+  const isTeacher = user?.role === "teacher";
+
+  const tabs = [
+    {
+      key: "home",
+      to: "/home",
+      label: "Home",
+      icon: HomeIcon,
+      end: true,
+    },
+    isTeacher
+      ? {
+          key: "students",
+          to: "/students",
+          label: "Student",
+          icon: StudentIcon,
+        }
+      : {
+          key: "clock",
+          to: "/clock",
+          label: "Clock",
+          icon: ClockIcon,
+        },
+    {
+      key: "calendar",
+      to: "/calendar",
+      label: "Calendar",
+      icon: CalenderIcon,
+      end: true,
+    },
+    {
+      key: "profile",
+      to: "/profile",
+      label: "Profile",
+      icon: ProfileIcon,
+    },
+  ];
+
   return (
     <BottomTabWrap>
-      <TabItem
-        to="/home"
-        end
-        className={({ isActive }) => (isActive ? "active" : "")}
-      >
-        <Pill>
-          <IconWrap>
-            <img src={HomeIcon} alt="home" width={24} height={24} />
-          </IconWrap>
-          <Label>Home</Label>
-        </Pill>
-      </TabItem>
-
-      <TabItem
-        to="/clock"
-        className={({ isActive }) => (isActive ? "active" : "")}
-      >
-        <Pill>
-          <IconWrap>
-            <img src={ClockIcon} alt="clock" width={24} height={24} />
-          </IconWrap>
-          <Label>Clock</Label>
-        </Pill>
-      </TabItem>
-
-      <TabItem
-        to="/calendar"
-        end
-        className={({ isActive }) => (isActive ? "active" : "")}
-      >
-        {" "}
-        <Pill>
-          <IconWrap>
-            <img src={CalenderIcon} alt="calendar" width={24} height={24} />
-          </IconWrap>
-          <Label>Calendar</Label>
-        </Pill>
-      </TabItem>
-
-      <TabItem
-        to="/profile"
-        className={({ isActive }) => (isActive ? "active" : "")}
-      >
-        <Pill>
-          <IconWrap>
-            <img src={ProfileIcon} alt="profile" width={24} height={24} />
-          </IconWrap>
-          <Label>Profile</Label>
-        </Pill>
-      </TabItem>
+      {tabs.map((tab) => (
+        <TabItem
+          key={tab.key}
+          to={tab.to}
+          end={tab.end}
+          className={({ isActive }) => (isActive ? "active" : "")}
+        >
+          <Pill>
+            <IconWrap>
+              <img src={tab.icon} alt={tab.label.toLowerCase()} width={24} height={24} />
+            </IconWrap>
+            <Label>{tab.label}</Label>
+          </Pill>
+        </TabItem>
+      ))}
     </BottomTabWrap>
   );
 };

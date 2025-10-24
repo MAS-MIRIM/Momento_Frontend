@@ -13,24 +13,32 @@ const ErrorText = ({ children }) => (
 );
 
 const EDUCATION_OFFICES = [
-  "서울특별시교육청",
-  "부산광역시교육청",
-  "대구광역시교육청",
-  "인천광역시교육청",
-  "광주광역시교육청",
-  "대전광역시교육청",
-  "울산광역시교육청",
-  "세종특별자치시교육청",
-  "경기도교육청",
-  "강원특별자치도교육청",
-  "충청북도교육청",
-  "충청남도교육청",
-  "전북특별자치도교육청",
-  "전라남도교육청",
-  "경상북도교육청",
-  "경상남도교육청",
-  "제주특별자치도교육청",
+  { label: "서울특별시교육청", value: "B10" },
+  { label: "부산광역시교육청", value: "C10" },
+  { label: "대구광역시교육청", value: "D10" },
+  { label: "인천광역시교육청", value: "E10" },
+  { label: "광주광역시교육청", value: "F10" },
+  { label: "대전광역시교육청", value: "G10" },
+  { label: "울산광역시교육청", value: "H10" },
+  { label: "세종특별자치시교육청", value: "I10" },
+  { label: "경기도교육청", value: "J10" },
+  { label: "강원특별자치도교육청", value: "K10" },
+  { label: "충청북도교육청", value: "M10" },
+  { label: "충청남도교육청", value: "N10" },
+  { label: "전북특별자치도교육청", value: "P10" },
+  { label: "전라남도교육청", value: "Q10" },
+  { label: "경상북도교육청", value: "R10" },
+  { label: "경상남도교육청", value: "S10" },
+  { label: "제주특별자치도교육청", value: "T10" },
 ];
+
+const SCHOOL_CODE_MAP = {
+  "미림마이스터고등학교": "7011569",
+  "미림여자고등학교": "7010167",
+};
+
+const normalizeSchoolName = (name) =>
+  name.replace(/\s+/g, "").trim().toLowerCase();
 
 const SignUpScreen = ({
   onSignUpSuccess = () => {},
@@ -40,8 +48,9 @@ const SignUpScreen = ({
   const [role, setRole] = useState("");
 
   const [name, setName] = useState("");
-  const [educationOffice, setEducationOffice] = useState("");
+  const [educationOfficeCode, setEducationOfficeCode] = useState("");
   const [schoolName, setSchoolName] = useState("");
+  const [schoolCode, setSchoolCode] = useState("");
   const [grade, setGrade] = useState("");
   const [classNumber, setClassNumber] = useState("");
   const [studentNumber, setStudentNumber] = useState("");
@@ -72,6 +81,19 @@ const SignUpScreen = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { login } = useAuth();
+
+  const handleEducationOfficeSelect = (value) => {
+    setEducationOfficeCode(value);
+    if (educationOfficeError) setEducationOfficeError("");
+    if (import.meta.env.DEV) {
+      const selected = EDUCATION_OFFICES.find((office) => office.value === value);
+      console.log(
+        "[MITHON] 선택한 교육청 코드:",
+        value,
+        selected ? `(${selected.label})` : ""
+      );
+    }
+  };
 
   const validatePassword = (pass) => {
     const hasMinLength = pass.length >= 8;
@@ -118,7 +140,7 @@ const SignUpScreen = ({
       return !!role;
     }
     if (currentStep === 1) {
-      if (!name.trim() || !educationOffice.trim() || !schoolName.trim()) {
+      if (!name.trim() || !educationOfficeCode.trim() || !schoolName.trim()) {
         return false;
       }
 
@@ -159,7 +181,7 @@ const SignUpScreen = ({
     currentStep,
     role,
     name,
-    educationOffice,
+    educationOfficeCode,
     schoolName,
     grade,
     classNumber,
@@ -260,7 +282,7 @@ const SignUpScreen = ({
         setNameError("");
       }
 
-      if (!educationOffice.trim()) {
+      if (!educationOfficeCode.trim()) {
         setEducationOfficeError("교육청을 선택해주세요.");
         hasError = true;
       } else {
@@ -329,13 +351,23 @@ const SignUpScreen = ({
       if (!isPasswordValid) return;
       setIsSubmitting(true);
       try {
+        const selectedOffice = EDUCATION_OFFICES.find(
+          (office) => office.value === educationOfficeCode
+        );
+
         const basePayload = {
           role,
           name: name.trim(),
           userId: userId.trim(),
           school: schoolName.trim(),
+          educationOfficeCode: educationOfficeCode.trim(),
+          educationOffice: selectedOffice?.label || "",
           password,
         };
+
+        if (schoolCode) {
+          basePayload.schoolCode = schoolCode;
+        }
 
         let payload = basePayload;
         if (role === "student") {
@@ -355,6 +387,16 @@ const SignUpScreen = ({
           }
           if (homeroomClass.trim()) {
             payload.homeroomClass = Number(homeroomClass);
+          }
+        }
+
+        if (import.meta.env.DEV) {
+          console.log(
+            "[MITHON] 전송 교육청 코드:",
+            basePayload.educationOfficeCode
+          );
+          if (schoolCode) {
+            console.log("[MITHON] 전송 학교 코드:", schoolCode);
           }
         }
 
@@ -430,7 +472,7 @@ const SignUpScreen = ({
           </StepTitle>
 
           <Field>
-            <InputWrapper hasError={Boolean(nameError)}>
+            <InputWrapper $hasError={Boolean(nameError)}>
               <StyledInput
                 value={name}
                 onChange={(e) => {
@@ -445,18 +487,15 @@ const SignUpScreen = ({
           </Field>
 
           <Field>
-            <InputWrapper hasError={Boolean(educationOfficeError)}>
+            <InputWrapper $hasError={Boolean(educationOfficeError)}>
               <StyledSelect
-                value={educationOffice}
-                onChange={(e) => {
-                  setEducationOffice(e.target.value);
-                  if (educationOfficeError) setEducationOfficeError("");
-                }}
+                value={educationOfficeCode}
+                onChange={(e) => handleEducationOfficeSelect(e.target.value)}
               >
                 <option value="">교육청을 선택하세요</option>
                 {EDUCATION_OFFICES.map((ofc) => (
-                  <option key={ofc} value={ofc}>
-                    {ofc}
+                  <option key={ofc.value} value={ofc.value}>
+                    {ofc.label}
                   </option>
                 ))}
               </StyledSelect>
@@ -467,12 +506,33 @@ const SignUpScreen = ({
           </Field>
 
           <Field>
-            <InputWrapper hasError={Boolean(schoolNameError)}>
+            <InputWrapper $hasError={Boolean(schoolNameError)}>
               <StyledInput
                 value={schoolName}
                 onChange={(e) => {
-                  setSchoolName(e.target.value);
+                  const value = e.target.value;
+                  setSchoolName(value);
                   if (schoolNameError) setSchoolNameError("");
+                  const trimmed = value.trim();
+                  const normalized = normalizeSchoolName(value);
+                  const matchedCode =
+                    SCHOOL_CODE_MAP[trimmed] ||
+                    SCHOOL_CODE_MAP[value] ||
+                    Object.entries(SCHOOL_CODE_MAP).find(
+                      ([key]) => normalizeSchoolName(key) === normalized
+                    )?.[1];
+                  if (matchedCode) {
+                    setSchoolCode(matchedCode);
+                    if (import.meta.env.DEV) {
+                      console.log(
+                        "[MITHON] 학교 코드 자동 설정:",
+                        matchedCode,
+                        `(${trimmed})`
+                      );
+                    }
+                  } else {
+                    setSchoolCode("");
+                  }
                 }}
                 placeholder="학교명을 입력해주세요."
               />
@@ -483,7 +543,7 @@ const SignUpScreen = ({
           {role === "student" && (
             <Field>
               <InlineFieldGroup>
-                <InlineInputWrapper hasError={Boolean(schoolDetailError)}>
+                <InlineInputWrapper $hasError={Boolean(schoolDetailError)}>
                   <StyledInputSmall
                     value={grade}
                     onChange={(e) => {
@@ -496,7 +556,7 @@ const SignUpScreen = ({
                   <InlineSuffix>학년</InlineSuffix>
                 </InlineInputWrapper>
 
-                <InlineInputWrapper hasError={Boolean(schoolDetailError)}>
+              <InlineInputWrapper $hasError={Boolean(schoolDetailError)}>
                   <StyledInputSmall
                     value={classNumber}
                     onChange={(e) => {
@@ -509,7 +569,7 @@ const SignUpScreen = ({
                   <InlineSuffix>반</InlineSuffix>
                 </InlineInputWrapper>
 
-                <InlineInputWrapper hasError={Boolean(schoolDetailError)}>
+              <InlineInputWrapper $hasError={Boolean(schoolDetailError)}>
                   <StyledInputSmall
                     value={studentNumber}
                     onChange={(e) => {
@@ -529,7 +589,7 @@ const SignUpScreen = ({
           {role === "teacher" && (
             <>
               <Field>
-                <InputWrapper hasError={Boolean(subjectError)}>
+                <InputWrapper $hasError={Boolean(subjectError)}>
                   <StyledInput
                     value={subject}
                     onChange={(e) => {
@@ -545,7 +605,7 @@ const SignUpScreen = ({
 
               <Field>
                 <InlineFieldGroup>
-                  <InlineInputWrapper hasError={Boolean(homeroomError)}>
+                  <InlineInputWrapper $hasError={Boolean(homeroomError)}>
                     <StyledInputSmall
                       value={homeroomGrade}
                       onChange={(e) => {
@@ -558,7 +618,7 @@ const SignUpScreen = ({
                     <InlineSuffix>학년</InlineSuffix>
                   </InlineInputWrapper>
 
-                  <InlineInputWrapper hasError={Boolean(homeroomError)}>
+                  <InlineInputWrapper $hasError={Boolean(homeroomError)}>
                     <StyledInputSmall
                       value={homeroomClass}
                       onChange={(e) => {
@@ -589,7 +649,7 @@ const SignUpScreen = ({
             아이디를 입력해주세요.
           </StepTitle>
           <Field>
-            <InputWrapper hasError={Boolean(idError)}>
+            <InputWrapper $hasError={Boolean(idError)}>
               <StyledInput
                 value={userId}
                 onChange={handleIdChange}
@@ -621,7 +681,7 @@ const SignUpScreen = ({
         </StepTitle>
 
         <Field>
-          <InputWrapper hasError={Boolean(passwordError)}>
+          <InputWrapper $hasError={Boolean(passwordError)}>
             <StyledInput
               value={password}
               onChange={handlePasswordChange}
@@ -640,7 +700,7 @@ const SignUpScreen = ({
         </Field>
 
         <Field>
-          <InputWrapper hasError={Boolean(passwordConfirmError)}>
+          <InputWrapper $hasError={Boolean(passwordConfirmError)}>
             <StyledInput
               value={passwordConfirm}
               onChange={handlePasswordConfirmChange}
@@ -770,7 +830,7 @@ const InputWrapper = styled.div`
   align-items: center;
   width: 100%;
   max-width: 340px;
-  border: 1px solid ${({ hasError }) => (hasError ? "#ff4444" : "#ededed")};
+  border: 1px solid ${({ $hasError }) => ($hasError ? "#ff4444" : "#ededed")};
   border-radius: 15px;
   padding: 0 12px;
   background-color: #ffffff;

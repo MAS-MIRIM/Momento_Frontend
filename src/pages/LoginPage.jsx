@@ -83,7 +83,7 @@ const LoginScreen = ({
             </StepTitle>
 
             <Field>
-              <InputWrapper hasError={Boolean(idError)}>
+              <InputWrapper $hasError={Boolean(idError)}>
                 <StyledInput
                   value={userId}
                   onChange={handleIdChange}
@@ -95,7 +95,7 @@ const LoginScreen = ({
             </Field>
 
             <Field>
-              <InputWrapper hasError={Boolean(passwordError)}>
+              <InputWrapper $hasError={Boolean(passwordError)}>
                 <StyledInput
                   value={password}
                   onChange={handlePasswordChange}
@@ -200,7 +200,7 @@ const InputWrapper = styled.div`
   font-family: "Pretendard";
   align-items: center;
   width: 340px;
-  border: 1px solid ${({ hasError }) => (hasError ? "#ff4444" : "#ededed")};
+  border: 1px solid ${({ $hasError }) => ($hasError ? "#ff4444" : "#ededed")};
   border-radius: 15px;
   padding: 0 14px;
   background-color: #ffffff;
