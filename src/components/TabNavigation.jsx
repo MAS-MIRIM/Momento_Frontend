@@ -106,14 +106,16 @@ const TabNavigation = () => {
       </TabItem>
 
       <TabItem
-        to="/calender"
+        to="/calendar"
+        end
         className={({ isActive }) => (isActive ? "active" : "")}
       >
+        {" "}
         <Pill>
           <IconWrap>
-            <img src={CalenderIcon} alt="calender" width={24} height={24} />
+            <img src={CalenderIcon} alt="calendar" width={24} height={24} />
           </IconWrap>
-          <Label>Calender</Label>
+          <Label>Calendar</Label>
         </Pill>
       </TabItem>
 

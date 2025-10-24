@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import styled from "styled-components";
-import logo from "../assets/logo.png";
-import bell from "../assets/bell.png";
+import Header from "../components/Header";
 import TabNavigation from "../components/TabNavigation";
 
 const Container = styled.div`
@@ -12,27 +11,6 @@ const Container = styled.div`
   flex-direction: column;
   align-items: center;
   padding: 20px;
-`;
-
-const Header = styled.div`
-  width: 100%;
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 52px 12px;
-  margin-bottom: 30px;
-`;
-
-const Logo = styled.img`
-  width: 120px;
-  height: auto;
-`;
-
-const Bell = styled.img`
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
 `;
 
 const TabSection = styled.div`
@@ -77,11 +55,7 @@ const HomePage = () => {
 
   return (
     <Container>
-      <Header>
-        <Logo src={logo} alt="logo" />
-        <Bell src={bell} alt="notifications" />
-      </Header>
-
+      <Header />
       <TabSection>
         <TabContainer>
           {tabs.map((tab) => (
