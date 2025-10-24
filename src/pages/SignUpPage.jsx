@@ -15,7 +15,9 @@ const SignUpScreen = ({
   onSignUpSuccess = () => {},
   onLoginPress = () => {},
 }) => {
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [role, setRole] = useState("");
+
   const [userId, setUserId] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
@@ -54,6 +56,9 @@ const SignUpScreen = ({
   );
 
   const canSubmit = useMemo(() => {
+    if (currentStep === 0) {
+      return !!role;
+    }
     if (currentStep === 1) {
       return isIdValid;
     }
@@ -64,7 +69,7 @@ const SignUpScreen = ({
       return nickname.trim().length > 0;
     }
     return false;
-  }, [currentStep, isIdValid, isPasswordValid, nickname]);
+  }, [currentStep, role, isIdValid, isPasswordValid, nickname]);
 
   const checkIdDuplicate = () => {
     if (!userId.trim()) {
@@ -117,7 +122,10 @@ const SignUpScreen = ({
 
   const handleNext = async (event) => {
     event.preventDefault();
-    if (!canSubmit || isSubmitting) {
+    if (!canSubmit || isSubmitting) return;
+
+    if (currentStep === 0) {
+      setCurrentStep(1);
       return;
     }
 
@@ -142,15 +150,16 @@ const SignUpScreen = ({
     }
 
     if (currentStep === 3) {
-      if (!nickname.trim()) {
-        return;
-      }
+      if (!nickname.trim()) return;
+
       setIsSubmitting(true);
       try {
-        // await ApiService.register(userId, password, nickname);
-        // await ApiService.login(userId, password);
+        // await ApiService.register({ userId, password, nickname, role });
+        // await ApiService.login({ userId, password });
+
         try {
           console.log("Setting isFirstSignUp to true");
+          // localStorage.setItem("isFirstSignUp", "true");
         } catch (storageError) {
           console.warn("Unable to access localStorage", storageError);
         }
@@ -165,7 +174,66 @@ const SignUpScreen = ({
   };
 
   const renderStepContent = () => {
+    if (currentStep === 0) {
+      return (
+        <>
+          <StepTitle>
+            <LogoImg src={logo} alt="로고" />
+            에서 사용하실
+            <br />
+            역할을 선택해주세요.
+          </StepTitle>
+
+          <RoleGrid>
+            <RoleCard
+              type="button"
+              selected={role === "student"}
+              onClick={() => setRole("student")}
+            >
+              <RoleIcon aria-hidden>🎒</RoleIcon>
+              <RoleDesc>수업 참여, 과제 제출</RoleDesc>
+              <RoleDivider />
+              <RoleTitle>학생</RoleTitle>
+            </RoleCard>
+
+            <RoleCard
+              type="button"
+              selected={role === "teacher"}
+              onClick={() => setRole("teacher")}
+            >
+              <RoleIcon aria-hidden>👩‍🏫</RoleIcon>
+              <RoleDesc>수업 관리, 과제 배포</RoleDesc>
+              <RoleDivider />
+              <RoleTitle>선생님</RoleTitle>
+            </RoleCard>
+          </RoleGrid>
+        </>
+      );
+    }
+
     if (currentStep === 1) {
+      return (
+        <>
+          <StepTitle>
+            <LogoImg src={logo} alt="로고" />
+            에서 사용하실
+            <br />
+            학교를 입력해주세요.
+          </StepTitle>
+          <Field>
+            <InputWrapper>
+              <StyledInput
+                value={nickname}
+                onChange={(event) => setNickname(event.target.value)}
+                placeholder="학교명을 입력해주세요."
+              />
+            </InputWrapper>
+          </Field>
+        </>
+      );
+    }
+
+    if (currentStep === 2) {
       return (
         <>
           <StepTitle>
@@ -192,72 +260,53 @@ const SignUpScreen = ({
       );
     }
 
-    if (currentStep === 2) {
-      return (
-        <>
-          <StepTitle>
-            <LogoImg src={logo} alt="로고" />
-            에서 사용하실
-            <br />
-            비밀번호를 입력해주세요.
-          </StepTitle>
-          <Field>
-            <InputWrapper hasError={Boolean(passwordError)}>
-              <StyledInput
-                value={password}
-                onChange={handlePasswordChange}
-                placeholder="비밀번호를 입력해주세요."
-                type={showPassword ? "text" : "password"}
-                autoComplete="new-password"
-              />
-              <ToggleButton
-                type="button"
-                onClick={() => setShowPassword((previous) => !previous)}
-              >
-                {showPassword ? "숨기기" : "표시"}
-              </ToggleButton>
-            </InputWrapper>
-            {passwordError && <ErrorText>{passwordError}</ErrorText>}
-          </Field>
-
-          <Field>
-            <InputWrapper hasError={Boolean(passwordConfirmError)}>
-              <StyledInput
-                value={passwordConfirm}
-                onChange={handlePasswordConfirmChange}
-                placeholder="비밀번호를 다시 한 번 입력해주세요."
-                type="password"
-                autoComplete="new-password"
-              />
-            </InputWrapper>
-            {passwordConfirmError && (
-              <ErrorText>{passwordConfirmError}</ErrorText>
-            )}
-          </Field>
-        </>
-      );
-    }
-
     return (
       <>
         <StepTitle>
           <LogoImg src={logo} alt="로고" />
           에서 사용하실
           <br />
-          닉네임을 입력해주세요.
+          비밀번호를 입력해주세요.
         </StepTitle>
         <Field>
-          <InputWrapper>
+          <InputWrapper hasError={Boolean(passwordError)}>
             <StyledInput
-              value={nickname}
-              onChange={(event) => setNickname(event.target.value)}
-              placeholder="닉네임을 입력해주세요."
+              value={password}
+              onChange={handlePasswordChange}
+              placeholder="비밀번호를 입력해주세요."
+              type={showPassword ? "text" : "password"}
+              autoComplete="new-password"
+            />
+            <ToggleButton
+              type="button"
+              onClick={() => setShowPassword((previous) => !previous)}
+            >
+              {showPassword ? "숨기기" : "표시"}
+            </ToggleButton>
+          </InputWrapper>
+          {passwordError && <ErrorText>{passwordError}</ErrorText>}
+        </Field>
+
+        <Field>
+          <InputWrapper hasError={Boolean(passwordConfirmError)}>
+            <StyledInput
+              value={passwordConfirm}
+              onChange={handlePasswordConfirmChange}
+              placeholder="비밀번호를 다시 한 번 입력해주세요."
+              type="password"
+              autoComplete="new-password"
             />
           </InputWrapper>
+          {passwordConfirmError && (
+            <ErrorText>{passwordConfirmError}</ErrorText>
+          )}
         </Field>
       </>
     );
   };
+
+  const primaryLabel =
+    currentStep === 3 ? "완료" : currentStep === 0 ? "다음으로" : "다음으로";
 
   return (
     <Container>
@@ -268,7 +317,7 @@ const SignUpScreen = ({
 
         <ButtonGroup>
           <PrimaryButton type="submit" disabled={!canSubmit || isSubmitting}>
-            {currentStep === 3 ? "완료" : "다음으로"}
+            {primaryLabel}
           </PrimaryButton>
           <LoginPrompt>
             <PromptText>이미 계정이 있으신가요?</PromptText>
@@ -305,6 +354,7 @@ const Content = styled.div`
   display: flex;
   flex-direction: column;
   justify-content: center;
+  position: relative;
   gap: 24px;
 `;
 
@@ -330,7 +380,9 @@ const StepTitle = styled.h1`
   margin: 0;
   text-align: left;
   width: 340px;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+  min-height: 72px;
+  position: static;
 `;
 
 const Field = styled.div`
@@ -473,6 +525,57 @@ const TextButton = styled.button`
   text-decoration: underline;
   cursor: pointer;
   padding: 0;
+`;
+
+const RoleGrid = styled.div`
+  width: 340px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 8px;
+`;
+
+const RoleCard = styled.button`
+  border: 2px solid ${({ selected }) => (selected ? "#05baae" : "#ededed")};
+  background: ${({ selected }) => (selected ? "rgba(5,186,174,0.08)" : "#fff")};
+  border-radius: 16px;
+  padding: 16px 12px;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+
+  &:hover {
+    border-color: #05baae;
+    background: rgba(5, 186, 174, 0.06);
+  }
+`;
+
+const RoleIcon = styled.div`
+  font-size: 52px;
+  line-height: 1;
+  margin-top: 8px;
+  margin-bottom: 8px;
+`;
+
+const RoleTitle = styled.div`
+  font-size: 18px;
+  font-weight: 700;
+  margin-top: 16px;
+  color: #111111;
+`;
+
+const RoleDesc = styled.div`
+  font-size: 12px;
+  margin-top: 18px;
+  margin-bottom: 16px;
+  color: #666666;
+`;
+
+const RoleDivider = styled.hr`
+  width: 100%;
+  height: 1.2px;
+  border: none;
+  background-color: #ededed;
 `;
 
 export default SignUpScreen;

@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes, useNavigate } from "react-router-dom";
 import Welcome from "./pages/Welcome";
 import LoginScreen from "./pages/LoginPage";
 import SignUpScreen from "./pages/SignupPage";
+import HomePage from "./pages/HomePage";
 
 const App = () => {
   return (
@@ -11,6 +12,7 @@ const App = () => {
         <Route path="/" element={<WelcomeRoute />} />
         <Route path="/login" element={<LoginRoute />} />
         <Route path="/signup" element={<SignUpRoute />} />
+        <Route path="/home" element={<HomeRoute />} />
       </Routes>
     </BrowserRouter>
   );
@@ -35,7 +37,7 @@ const LoginRoute = () => {
   return (
     <div className="app-container">
       <LoginScreen
-        onLoginSuccess={() => navigate("/")}
+        onLoginSuccess={() => navigate("/home")}
         onSignUpPress={() => navigate("/signup")}
       />
     </div>
@@ -48,9 +50,17 @@ const SignUpRoute = () => {
   return (
     <div className="app-container">
       <SignUpScreen
-        onSignUpSuccess={() => navigate("/login")}
+        onLoginSuccess={() => navigate("/home")}
         onLoginPress={() => navigate("/login")}
       />
+    </div>
+  );
+};
+
+const HomeRoute = () => {
+  return (
+    <div className="app-container">
+      <HomePage />;
     </div>
   );
 };

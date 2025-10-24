@@ -167,7 +167,7 @@ const StepTitle = styled.h1`
   margin: 0;
   text-align: left;
   width: 340px;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 `;
 
 const Field = styled.div`
