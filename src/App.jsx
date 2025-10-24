@@ -4,6 +4,7 @@ import Welcome from "./pages/Welcome";
 import LoginScreen from "./pages/LoginPage";
 import SignUpScreen from "./pages/SignupPage";
 import HomePage from "./pages/HomePage";
+import CalendarPage from "./pages/CalendarPage";
 
 const App = () => {
   return (
@@ -13,6 +14,7 @@ const App = () => {
         <Route path="/login" element={<LoginRoute />} />
         <Route path="/signup" element={<SignUpRoute />} />
         <Route path="/home" element={<HomeRoute />} />
+        <Route path="/calendar" element={<CalendarRoute />} />
       </Routes>
     </BrowserRouter>
   );
@@ -60,7 +62,15 @@ const SignUpRoute = () => {
 const HomeRoute = () => {
   return (
     <div className="app-container">
-      <HomePage />;
+      <HomePage />
+    </div>
+  );
+};
+
+const CalendarRoute = () => {
+  return (
+    <div className="app-container">
+      <CalendarPage />
     </div>
   );
 };
