@@ -179,6 +179,15 @@ const ApiService = {
     return parseResponse(response);
   },
 
+  async createMission(token, payload) {
+    const response = await fetch(buildUrl("/teacher/missions"), {
+      method: "POST",
+      headers: authJsonHeaders(token),
+      body: JSON.stringify(payload),
+    });
+    return parseResponse(response);
+  },
+
   async getClassCharacter(token, { educationOfficeCode, schoolCode, grade, classNumber } = {}) {
     const params = new URLSearchParams();
     if (educationOfficeCode) params.append("educationOfficeCode", educationOfficeCode);

@@ -106,6 +106,7 @@ export const AuthProvider = ({ children }) => {
     persistToken(null);
     setToken(null);
     setUser(null);
+    window.location.assign("/");
   }, []);
 
   const value = useMemo(

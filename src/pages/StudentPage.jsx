@@ -1,9 +1,14 @@
 import React, { useMemo, useState } from "react";
-import styled from "styled-components";
+import styled, { css } from "styled-components";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import { useAuth } from "../contexts/AuthContext.jsx";
 import profileImg from "../assets/profile.png";
+import TabNavigation from "../components/TabNavigation.jsx";
+import { Check, X } from "lucide-react"; // 아이콘 라이브러리 사용 가정
+
+// --- 기존 styled-components (생략) ---
+// Container, ScrollWrapper, PageWrap, Title, Sub, Grid, Card, Avatar, Name, Meta, Section, CheckTable, Row, Cell, Badge, MissionText, MissionDetail은 기존 코드를 그대로 사용합니다.
 
 const Container = styled.div`
   width: 100%;
@@ -22,12 +27,12 @@ const ScrollWrapper = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 12px;
 `;
 
 const PageWrap = styled.div`
   width: 100%;
   max-width: 960px;
+  margin-bottom: 120px;
 `;
 
 const Title = styled.h2`
@@ -97,7 +102,7 @@ const CheckTable = styled.div`
 
 const Row = styled.div`
   display: grid;
-  grid-template-columns: 2fr 120px 120px;
+  grid-template-columns: 3fr 1fr 1fr; /* 미션 체크 셀 공간 축소 */
   align-items: center;
   gap: 8px;
   padding: 12px 14px;
@@ -124,33 +129,6 @@ const Badge = styled.span`
   font-weight: 700;
 `;
 
-const ToggleBtn = styled.button`
-  border: none;
-  border-radius: 10px;
-  padding: 8px 0;
-  font-weight: 900;
-  font-size: 16px;
-  cursor: pointer;
-  color: #fff;
-  background: ${(p) => (p.$type === "ok" ? "#23c098" : "#ff6b6b")};
-  &:active {
-    transform: translateY(1px);
-  }
-`;
-
-const MissionChip = styled.span`
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: #f2fbfa;
-  color: #0b3b38;
-  font-size: 12px;
-  font-weight: 600;
-  margin-top: 10px;
-`;
-
 const MissionText = styled.span`
   font-size: 13px;
   color: #4b5b59;
@@ -161,6 +139,81 @@ const MissionDetail = styled.div`
   flex-direction: column;
   gap: 4px;
 `;
+
+const ToggleButtonWrapper = styled.div`
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  margin-left: auto;
+  padding-right: 4px;
+`;
+
+const ToggleButton = styled.button`
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #eef4f3;
+  border-radius: 50%;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #f7f9f9;
+  color: #9aa7a6; /* 기본 아이콘 색상 */
+
+  ${(p) =>
+    p.$type === "ok" &&
+    p.$selected &&
+    css`
+      background: #23c098; /* 성공 시 배경색 */
+      border-color: #23c098;
+      color: #fff; /* 성공 시 아이콘 색상 */
+    `}
+
+  ${(p) =>
+    p.$type === "fail" &&
+    p.$selected &&
+    css`
+      background: #ff6b6b; /* 실패 시 배경색 */
+      border-color: #ff6b6b;
+      color: #fff; /* 실패 시 아이콘 색상 */
+    `}
+
+  &:hover:not(:disabled) {
+    opacity: 0.85;
+  }
+  &:active:not(:disabled) {
+    transform: scale(0.95);
+  }
+`;
+
+const StatusIcon = styled.div`
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 4px;
+  font-size: 10px;
+  font-weight: 700;
+
+  ${(p) =>
+    p.$status === "O" &&
+    css`
+      background: #23c098;
+      color: #fff;
+    `}
+  ${(p) =>
+    p.$status === "X" &&
+    css`
+      background: #ff6b6b;
+      color: #fff;
+    `}
+`;
+
+// --- 데이터 및 컴포넌트 로직 ---
 
 const MISSION_POOL = [
   "친구 한 명에게 칭찬 한마디 전하기",
@@ -198,6 +251,7 @@ const StudentsPage = () => {
   const classLabel = classroom.classNo
     ? `${classroom.classNo}반`
     : "반 정보 없음";
+
   const students = useMemo(() => {
     const base = [
       { id: "S01", name: "정희진", number: 1 },
@@ -215,10 +269,11 @@ const StudentsPage = () => {
   }, []);
 
   // 미션 체크 상태: { [studentId]: "O" | "X" | undefined }
+  // 기존 코드에서 `setMissionStatus`만 있었기에 `missionStatus` 상태를 추가합니다.
   const [missionStatus, setMissionStatus] = useState({});
 
   const handleGoDetail = (stu) => {
-    navigate(`/students/${stu.id}`, {
+    navigate(`/student-record`, {
       state: {
         grade: classroom.grade ?? undefined,
         classNo: classroom.classNo ?? undefined,
@@ -231,7 +286,11 @@ const StudentsPage = () => {
   };
 
   const checkMission = (id, result) => {
-    setMissionStatus((prev) => ({ ...prev, [id]: result })); // "O" 또는 "X"
+    // 이미 같은 상태라면 미체크 상태로 토글 (해제)
+    setMissionStatus((prev) => ({
+      ...prev,
+      [id]: prev[id] === result ? undefined : result,
+    }));
   };
 
   return (
@@ -261,51 +320,52 @@ const StudentsPage = () => {
           <Section>
             <Title>미션 체크</Title>
             <CheckTable>
-              {students.map((s) => (
-                <Row key={`row-${s.id}`}>
-                  <Cell>
-                    <MissionDetail>
-                      <strong>
-                        {s.number}번 {s.name}
-                      </strong>
-                      <div>
-                        <Badge>오늘의 미션</Badge>
-                        <MissionText>{s.mission}</MissionText>
-                      </div>
-                    </MissionDetail>
-                  </Cell>
-                  <Cell>
-                    <ToggleBtn
-                      $type="ok"
-                      onClick={() => checkMission(s.id, "O")}
-                      aria-label="미션 성공"
-                    >
-                      O
-                    </ToggleBtn>
-                  </Cell>
-                  <Cell>
-                    <ToggleBtn
-                      $type="x"
-                      onClick={() => checkMission(s.id, "X")}
-                      aria-label="미션 실패"
-                    >
-                      X
-                    </ToggleBtn>
-                  </Cell>
-                </Row>
-              ))}
+              {students.map((s) => {
+                const status = missionStatus[s.id]; // 현재 상태
+                return (
+                  <Row key={`row-${s.id}`}>
+                    <Cell>
+                      <MissionDetail>
+                        <strong>
+                          {status && (
+                            <StatusIcon $status={status}>{status}</StatusIcon>
+                          )}
+                          {s.number}번 {s.name}
+                        </strong>
+                        <div>
+                          <MissionText>{s.mission}</MissionText>
+                        </div>
+                      </MissionDetail>
+                    </Cell>
+                    {/* 성공/실패 버튼을 한 셀 안에 배치하고 아이콘으로 대체 */}
+                    <Cell style={{ gridColumn: "span 2" }}>
+                      <ToggleButtonWrapper>
+                        <ToggleButton
+                          $type="ok"
+                          $selected={status === "O"}
+                          onClick={() => checkMission(s.id, "O")}
+                          aria-label={`${s.name} 미션 성공`}
+                        >
+                          <Check size={18} />
+                        </ToggleButton>
+                        <ToggleButton
+                          $type="fail"
+                          $selected={status === "X"}
+                          onClick={() => checkMission(s.id, "X")}
+                          aria-label={`${s.name} 미션 실패`}
+                        >
+                          <X size={18} />
+                        </ToggleButton>
+                      </ToggleButtonWrapper>
+                    </Cell>
+                  </Row>
+                );
+              })}
             </CheckTable>
-            <Sub style={{ marginTop: 8 }}>
-              현재 상태:{" "}
-              {students.map((s) => (
-                <span key={`st-${s.id}`} style={{ marginRight: 8 }}>
-                  {s.name}:{missionStatus[s.id] || "-"}
-                </span>
-              ))}
-            </Sub>
           </Section>
         </PageWrap>
       </ScrollWrapper>
+      <TabNavigation />
     </Container>
   );
 };

@@ -6,14 +6,20 @@ import TabNavigation from "../components/TabNavigation.jsx";
 import profile from "../assets/profile.png";
 
 const Container = styled.div`
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  background-color: #f7f9fa;
+`;
+
+const ScrollWrapper = styled.div`
   flex: 1;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 32px 20px 120px;
-  background-color: #f7f9fa;
-  min-height: 100%;
-  position: relative;
 `;
 
 const Avatar = styled.img`
@@ -197,42 +203,42 @@ const ProfilePage = () => {
   return (
     <Container>
       <Header />
+      <ScrollWrapper>
+        {/* 1. 아바타와 정보 블록 */}
+        <ProfileSummary>
+          <Avatar src={profile} alt="프로필" />
+          <UserInfoBlock>
+            <NameDisplay>{name ?? "이름 없음"}</NameDisplay>
+            <DetailDisplay>{detailInfo}</DetailDisplay>
+          </UserInfoBlock>
+        </ProfileSummary>
 
-      {/* 1. 아바타와 정보 블록 */}
-      <ProfileSummary>
-        <Avatar src={profile} alt="프로필" />
-        <UserInfoBlock>
-          <NameDisplay>{name ?? "이름 없음"}</NameDisplay>
-          <DetailDisplay>{detailInfo}</DetailDisplay>
-        </UserInfoBlock>
-      </ProfileSummary>
+        {error && (
+          <ErrorText>
+            프로필 정보를 불러오는 중 오류가 발생했습니다. 다시 시도해주세요.
+          </ErrorText>
+        )}
+        <SectionContainer>
+          <SectionTitle>내 설정</SectionTitle>
+          <SectionList>
+            <ListItem>내 정보</ListItem>
+            <ListItem>공지사항</ListItem>
+          </SectionList>
+        </SectionContainer>
 
-      {error && (
-        <ErrorText>
-          프로필 정보를 불러오는 중 오류가 발생했습니다. 다시 시도해주세요.
-        </ErrorText>
-      )}
-      <SectionContainer>
-        <SectionTitle>내 설정</SectionTitle>
-        <SectionList>
-          <ListItem>내 정보</ListItem>
-          <ListItem>공지사항</ListItem>
-        </SectionList>
-      </SectionContainer>
-
-      {/* 5. 문의 섹션 추가 */}
-      <SectionContainer>
-        <SectionTitle>문의</SectionTitle>
-        <SectionList>
-          <ListItem>서비스 이용약관</ListItem>
-          <ListItem>고객센터 및 1:1 문의</ListItem>
-        </SectionList>
-      </SectionContainer>
-      <Spacer />
-      <ActionBar>
-        <PrimaryButton onClick={logout}>로그아웃</PrimaryButton>
-      </ActionBar>
-
+        {/* 5. 문의 섹션 추가 */}
+        <SectionContainer>
+          <SectionTitle>문의</SectionTitle>
+          <SectionList>
+            <ListItem>서비스 이용약관</ListItem>
+            <ListItem>고객센터 및 1:1 문의</ListItem>
+          </SectionList>
+        </SectionContainer>
+        <Spacer />
+        <ActionBar>
+          <PrimaryButton onClick={logout}>로그아웃</PrimaryButton>
+        </ActionBar>
+      </ScrollWrapper>
       <TabNavigation />
     </Container>
   );

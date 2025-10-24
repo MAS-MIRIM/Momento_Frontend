@@ -19,10 +19,11 @@ const App = () => {
         <Route path="/signup" element={<SignUpRoute />} />
         <Route path="/home" element={<HomeRoute />} />
         <Route path="/calendar" element={<CalendarRoute />} />
+        <Route path="/clock" element={<ClockRoute />} />
         <Route path="/timetable" element={<TimetableRoute />} />
         <Route path="/profile" element={<ProfileRoute />} />
         <Route path="/students" element={<StudentRoute />} />
-        <Route path="/students/:studentId" element={<StudentRecordRoute />} />
+        <Route path="/student-record" element={<StudentRecordRoute />} />
       </Routes>
     </BrowserRouter>
   );
@@ -79,6 +80,14 @@ const CalendarRoute = () => {
   return (
     <div className="app-container">
       <CalendarPage />
+    </div>
+  );
+};
+
+const ClockRoute = () => {
+  return (
+    <div className="app-container">
+      <ClockPage />
     </div>
   );
 };
