@@ -19,7 +19,7 @@ const Head = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 52px 12px;
+  padding: 52px 12px 42px 12px;
 `;
 
 const Header = () => {

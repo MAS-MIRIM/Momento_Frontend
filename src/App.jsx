@@ -8,6 +8,7 @@ import CalendarPage from "./pages/CalendarPage";
 import TimetablePage from "./pages/TimetablePage";
 import ProfilePage from "./pages/ProfilePage";
 import StudentPage from "./pages/StudentPage";
+import StudentRecordPage from "./pages/StudentRecordPage";
 
 const App = () => {
   return (
@@ -21,6 +22,7 @@ const App = () => {
         <Route path="/timetable" element={<TimetableRoute />} />
         <Route path="/profile" element={<ProfileRoute />} />
         <Route path="/students" element={<StudentRoute />} />
+        <Route path="/students/:studentId" element={<StudentRecordRoute />} />
       </Routes>
     </BrowserRouter>
   );
@@ -101,6 +103,14 @@ const StudentRoute = () => {
   return (
     <div className="app-container">
       <StudentPage />
+    </div>
+  );
+};
+
+const StudentRecordRoute = () => {
+  return (
+    <div className="app-container">
+      <StudentRecordPage />
     </div>
   );
 };

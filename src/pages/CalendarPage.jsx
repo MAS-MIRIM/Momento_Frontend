@@ -26,6 +26,7 @@ const Container = styled.div`
 
 const CalendarBar = styled.div`
   width: 100%;
+  margin-top: 12%;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -271,11 +272,19 @@ const RemoveBtn = styled.button`
 `;
 
 /* 입력: 시간(24h) / 카테고리 / 제목 */
+// ⭐ 변경된 부분 1: flex-direction: column
 const InputRow = styled.div`
-  display: grid;
-  grid-template-columns: 100px 120px 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
   margin-bottom: 10px;
+`;
+
+// ⭐ 추가된 부분: 시간과 카테고리를 묶어 1:1로 배치
+const HalfWidthRow = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
 `;
 
 const TimeInput = styled.input`
@@ -301,6 +310,8 @@ const TextInput = styled.input`
   padding: 12px 14px;
   font-size: 14px;
   outline: none;
+  width: 100%;
+  box-sizing: border-box;
 `;
 
 const PlusRow = styled.div`
@@ -475,7 +486,7 @@ const CalendarPage = () => {
     setTime(nowTime());
     setCategory("personal");
     setTitle("");
-    setSheetOpen(false);
+    // setSheetOpen(false); // 시트가 닫히지 않도록 주석 처리 (연속 입력 용이)
   };
 
   const removeEvent = (key, id) => {
@@ -621,25 +632,30 @@ const CalendarPage = () => {
                 })()}
               </EventsList>
 
-              {/* 입력: 시간(24h) / 카테고리 / 제목 */}
+              {/* 입력 레이아웃 변경 적용 */}
               <InputRow>
-                <TimeInput
-                  type="time"
-                  lang="ko-KR"
-                  step="60"
-                  min="00:00"
-                  max="23:59"
-                  value={time}
-                  onChange={(e) => setTime(e.target.value)}
-                />
-                <Select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                >
-                  <option value="school">학교 공식 일정</option>
-                  <option value="personal">개인 일정</option>
-                  <option value="assignment">과제</option>
-                </Select>
+                {/* 1행: 시간 + 카테고리 (1:1 분할) */}
+                <HalfWidthRow>
+                  <TimeInput
+                    type="time"
+                    lang="ko-KR"
+                    step="60"
+                    min="00:00"
+                    max="23:59"
+                    value={time}
+                    onChange={(e) => setTime(e.target.value)}
+                  />
+                  <Select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                  >
+                    <option value="school">학교 공식 일정</option>
+                    <option value="personal">개인 일정</option>
+                    <option value="assignment">과제</option>
+                  </Select>
+                </HalfWidthRow>
+
+                {/* 2행: 일정 이름 (전체 너비) */}
                 <TextInput
                   placeholder="일정 이름"
                   value={title}

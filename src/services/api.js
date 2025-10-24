@@ -23,7 +23,16 @@ const buildUrl = (path) => {
   if (!path.startsWith("/")) {
     throw new Error("API path must start with '/'");
   }
-  return `${API_BASE_URL}${path}`;
+
+  if (/^https?:\/\//i.test(API_BASE_URL)) {
+    return `${API_BASE_URL}${path}`;
+  }
+
+  const basePath = API_BASE_URL.startsWith("/")
+    ? API_BASE_URL
+    : `/${API_BASE_URL}`;
+
+  return `${basePath}${path}`;
 };
 
 const parseResponse = async (response) => {
@@ -101,14 +110,18 @@ const ApiService = {
     return parseResponse(response);
   },
 
-  async getTimetable({ schoolCode, grade, classNumber, date } = {}, token) {
+  async getTimetable(
+    { educationOfficeCode, schoolCode, grade, classNumber, date } = {},
+    token
+  ) {
     const params = new URLSearchParams();
+    if (educationOfficeCode) params.append("officeCode", educationOfficeCode);
     if (schoolCode) params.append("schoolCode", schoolCode);
     if (grade !== undefined && grade !== null && grade !== "") {
       params.append("grade", grade);
     }
     if (classNumber !== undefined && classNumber !== null && classNumber !== "") {
-      params.append("class", classNumber);
+      params.append("classNumber", classNumber);
     }
     if (date) params.append("date", date);
 
@@ -122,8 +135,12 @@ const ApiService = {
     return parseResponse(response);
   },
 
-  async getMeal({ schoolCode, date } = {}, token) {
+  async getMeal(
+    { educationOfficeCode, schoolCode, date } = {},
+    token
+  ) {
     const params = new URLSearchParams();
+    if (educationOfficeCode) params.append("officeCode", educationOfficeCode);
     if (schoolCode) params.append("schoolCode", schoolCode);
     if (date) params.append("date", date);
 
@@ -145,6 +162,14 @@ const ApiService = {
     return parseResponse(response);
   },
 
+  async getEmergencyMissions(token) {
+    const response = await fetch(buildUrl("/user/missions/emergency"), {
+      method: "GET",
+      headers: authHeaders(token),
+    });
+    return parseResponse(response);
+  },
+
   async completeMission(token, payload) {
     const response = await fetch(buildUrl("/user/mission/complete"), {
       method: "POST",
@@ -154,8 +179,21 @@ const ApiService = {
     return parseResponse(response);
   },
 
-  async getClassCharacter(token) {
-    const response = await fetch(buildUrl("/user/class/character"), {
+  async getClassCharacter(token, { educationOfficeCode, schoolCode, grade, classNumber } = {}) {
+    const params = new URLSearchParams();
+    if (educationOfficeCode) params.append("educationOfficeCode", educationOfficeCode);
+    if (schoolCode) params.append("schoolCode", schoolCode);
+    if (grade !== undefined && grade !== null && grade !== "") {
+      params.append("grade", grade);
+    }
+    if (classNumber !== undefined && classNumber !== null && classNumber !== "") {
+      params.append("classNumber", classNumber);
+    }
+
+    const query = params.toString();
+    const url = query ? `/user/class/character?${query}` : "/user/class/character";
+
+    const response = await fetch(buildUrl(url), {
       method: "GET",
       headers: authHeaders(token),
     });

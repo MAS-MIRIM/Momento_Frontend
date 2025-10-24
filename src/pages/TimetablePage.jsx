@@ -228,6 +228,7 @@ const TimetablePage = () => {
   }, [user]);
 
   const schoolCode = user?.schoolCode;
+  const educationOfficeCode = user?.educationOfficeCode;
 
   const yyyymmdd = useMemo(() => {
     const y = date.getFullYear();
@@ -237,7 +238,7 @@ const TimetablePage = () => {
   }, [date]);
 
   useEffect(() => {
-    if (!schoolCode || !grade || !klass) {
+    if (!educationOfficeCode || !schoolCode || !grade || !klass) {
       return;
     }
 
@@ -247,6 +248,7 @@ const TimetablePage = () => {
 
     ApiService.getTimetable(
       {
+        educationOfficeCode,
         schoolCode,
         grade,
         classNumber: klass,
@@ -275,10 +277,10 @@ const TimetablePage = () => {
     return () => {
       ignore = true;
     };
-  }, [schoolCode, grade, klass, yyyymmdd, token]);
+  }, [educationOfficeCode, schoolCode, grade, klass, yyyymmdd, token]);
 
   useEffect(() => {
-    if (!schoolCode) {
+    if (!educationOfficeCode || !schoolCode) {
       return;
     }
 
@@ -288,6 +290,7 @@ const TimetablePage = () => {
 
     ApiService.getMeal(
       {
+        educationOfficeCode,
         schoolCode,
         date: yyyymmdd,
       },
@@ -314,7 +317,7 @@ const TimetablePage = () => {
     return () => {
       ignore = true;
     };
-  }, [schoolCode, yyyymmdd, token]);
+  }, [educationOfficeCode, schoolCode, yyyymmdd, token]);
 
   const periods = useMemo(() => {
     if (!Array.isArray(timetableDays)) return [];
@@ -345,7 +348,9 @@ const TimetablePage = () => {
     setDate(d);
   };
 
-  const canRequestData = Boolean(schoolCode && grade && klass);
+  const canRequestData = Boolean(
+    educationOfficeCode && schoolCode && grade && klass
+  );
 
   return (
     <Container>
