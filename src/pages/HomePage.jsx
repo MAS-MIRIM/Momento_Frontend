@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import styled from "styled-components";
 import logo from "../assets/logo.png";
 import bell from "../assets/bell.png";
+import TabNavigation from "../components/TabNavigation";
 
 const Container = styled.div`
   width: 100%;
@@ -94,6 +95,7 @@ const HomePage = () => {
           ))}
         </TabContainer>
       </TabSection>
+      <TabNavigation />
     </Container>
   );
 };

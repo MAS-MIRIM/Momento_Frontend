@@ -21,12 +21,17 @@ const SignUpScreen = ({
   const [userId, setUserId] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
-  const [nickname, setNickname] = useState("");
+  const [schoolName, setSchoolName] = useState("");
+  const [grade, setGrade] = useState("");
+  const [classNumber, setClassNumber] = useState("");
+  const [studentNumber, setStudentNumber] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
   const [passwordError, setPasswordError] = useState("");
   const [passwordConfirmError, setPasswordConfirmError] = useState("");
   const [idError, setIdError] = useState("");
+  const [schoolNameError, setSchoolNameError] = useState("");
+  const [schoolDetailError, setSchoolDetailError] = useState("");
   const [isIdValid, setIsIdValid] = useState(false);
   const [isIdChecked, setIsIdChecked] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -60,16 +65,30 @@ const SignUpScreen = ({
       return !!role;
     }
     if (currentStep === 1) {
-      return isIdValid;
+      return (
+        schoolName.trim().length > 0 &&
+        grade.trim().length > 0 &&
+        classNumber.trim().length > 0 &&
+        studentNumber.trim().length > 0
+      );
     }
     if (currentStep === 2) {
-      return isPasswordValid;
+      return isIdValid;
     }
     if (currentStep === 3) {
-      return nickname.trim().length > 0;
+      return isPasswordValid;
     }
     return false;
-  }, [currentStep, role, isIdValid, isPasswordValid, nickname]);
+  }, [
+    currentStep,
+    role,
+    isIdValid,
+    isPasswordValid,
+    schoolName,
+    grade,
+    classNumber,
+    studentNumber,
+  ]);
 
   const checkIdDuplicate = () => {
     if (!userId.trim()) {
@@ -130,31 +149,58 @@ const SignUpScreen = ({
     }
 
     if (currentStep === 1) {
-      if (!userId.trim()) {
-        setIdError("아이디를 입력해주세요.");
+      let hasError = false;
+
+      if (!schoolName.trim()) {
+        setSchoolNameError("학교명을 입력해주세요.");
+        hasError = true;
+      } else {
+        setSchoolNameError("");
+      }
+
+      if (!grade.trim() || !classNumber.trim() || !studentNumber.trim()) {
+        setSchoolDetailError("학년, 반, 번호를 모두 입력해주세요.");
+        hasError = true;
+      } else {
+        setSchoolDetailError("");
+      }
+
+      if (hasError) {
         return;
       }
-      if (!isIdChecked) {
-        setIdError("아이디 중복 확인을 해주세요.");
-        return;
-      }
+
       setCurrentStep(2);
       return;
     }
 
     if (currentStep === 2) {
-      if (isPasswordValid) {
-        setCurrentStep(3);
+      if (!userId.trim()) {
+        setIdError("아이디를 입력해주세요.");
+        return;
       }
+      if (!isIdChecked || !isIdValid) {
+        setIdError("아이디 중복 확인을 해주세요.");
+        return;
+      }
+
+      setIdError("");
+      setCurrentStep(3);
       return;
     }
 
     if (currentStep === 3) {
-      if (!nickname.trim()) return;
-
+      if (!isPasswordValid) return;
       setIsSubmitting(true);
       try {
-        // await ApiService.register({ userId, password, nickname, role });
+        // await ApiService.register({
+        //   userId,
+        //   password,
+        //   schoolName,
+        //   grade,
+        //   classNumber,
+        //   studentNumber,
+        //   role,
+        // });
         // await ApiService.login({ userId, password });
 
         try {
@@ -221,13 +267,66 @@ const SignUpScreen = ({
             학교를 입력해주세요.
           </StepTitle>
           <Field>
-            <InputWrapper>
+            <InputWrapper hasError={Boolean(schoolNameError)}>
               <StyledInput
-                value={nickname}
-                onChange={(event) => setNickname(event.target.value)}
+                value={schoolName}
+                onChange={(event) => {
+                  setSchoolName(event.target.value);
+                  if (schoolNameError) {
+                    setSchoolNameError("");
+                  }
+                }}
                 placeholder="학교명을 입력해주세요."
               />
             </InputWrapper>
+            {schoolNameError && <ErrorText>{schoolNameError}</ErrorText>}
+          </Field>
+          <Field>
+            <InlineFieldGroup>
+              <InlineInputWrapper hasError={Boolean(schoolDetailError)}>
+                <StyledInput2
+                  value={grade}
+                  onChange={(event) => {
+                    setGrade(event.target.value);
+                    if (schoolDetailError) {
+                      setSchoolDetailError("");
+                    }
+                  }}
+                  placeholder="학년"
+                  inputMode="numeric"
+                />
+                <InlineSuffix>학년</InlineSuffix>
+              </InlineInputWrapper>
+              <InlineInputWrapper hasError={Boolean(schoolDetailError)}>
+                <StyledInput2
+                  value={classNumber}
+                  onChange={(event) => {
+                    setClassNumber(event.target.value);
+                    if (schoolDetailError) {
+                      setSchoolDetailError("");
+                    }
+                  }}
+                  placeholder="반"
+                  inputMode="numeric"
+                />
+                <InlineSuffix>반</InlineSuffix>
+              </InlineInputWrapper>
+              <InlineInputWrapper hasError={Boolean(schoolDetailError)}>
+                <StyledInput2
+                  value={studentNumber}
+                  onChange={(event) => {
+                    setStudentNumber(event.target.value);
+                    if (schoolDetailError) {
+                      setSchoolDetailError("");
+                    }
+                  }}
+                  placeholder="번호"
+                  inputMode="numeric"
+                />
+                <InlineSuffix>번</InlineSuffix>
+              </InlineInputWrapper>
+            </InlineFieldGroup>
+            {schoolDetailError && <ErrorText>{schoolDetailError}</ErrorText>}
           </Field>
         </>
       );
@@ -352,17 +451,22 @@ const Card = styled.form`
 const Content = styled.div`
   flex: 1;
   display: flex;
+  margin-top: 50%;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
+  align-items: center;
   position: relative;
   gap: 24px;
+  padding-top: 24px;
 `;
 
 const StepArea = styled.div`
   display: flex;
   flex-direction: column;
   gap: 16px;
-  align-items: center;
+  align-items: flex-start;
+  width: 100%;
+  max-width: 340px;
 `;
 
 const LogoImg = styled.img`
@@ -379,7 +483,7 @@ const StepTitle = styled.h1`
   line-height: 36px;
   margin: 0;
   text-align: left;
-  width: 340px;
+  width: 100%;
   margin-bottom: 12px;
   min-height: 72px;
   position: static;
@@ -389,15 +493,24 @@ const Field = styled.div`
   display: flex;
   flex-direction: column;
   gap: 8px;
-  align-items: center;
+  align-items: flex-start;
   font-family: "Pretendard";
+  width: 100%;
+`;
+
+const InlineFieldGroup = styled.div`
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 340px;
 `;
 
 const InputWrapper = styled.div`
   display: flex;
   font-family: "Pretendard";
   align-items: center;
-  width: 340px;
+  width: 100%;
+  max-width: 340px;
   border: 1px solid ${({ hasError }) => (hasError ? "#ff4444" : "#ededed")};
   border-radius: 15px;
   padding: 0 14px;
@@ -409,7 +522,29 @@ const InputWrapper = styled.div`
   }
 `;
 
+const InlineInputWrapper = styled(InputWrapper)`
+  flex: 1;
+  max-width: none;
+  padding-right: 10px;
+`;
+
 const StyledInput = styled.input`
+  flex: 1;
+  font-family: "Pretendard";
+  border: none;
+  padding: 14px 0;
+  font-size: 16px;
+  outline: none;
+  background: transparent;
+  color: #111111;
+
+  ::placeholder {
+    color: #a7a7a7;
+    font-family: "Pretendard";
+  }
+`;
+
+const StyledInput2 = styled.input`
   flex: 1;
   font-family: "Pretendard";
   border: none;
@@ -463,12 +598,20 @@ const ErrorIcon = styled.img`
 const StyledErrorText = styled.span`
   color: #ff4444;
   font-size: 14px;
-  width: 340px;
+  width: 100%;
+  max-width: 340px;
   text-align: left;
   display: flex;
   align-items: center;
   padding-left: 2px;
   margin-top: 4px;
+`;
+
+const InlineSuffix = styled.span`
+  font-size: 14px;
+  color: #666666;
+  margin-left: 6px;
+  flex-shrink: 0;
 `;
 
 const ButtonGroup = styled.div`
@@ -528,7 +671,8 @@ const TextButton = styled.button`
 `;
 
 const RoleGrid = styled.div`
-  width: 340px;
+  width: 100%;
+  max-width: 340px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;

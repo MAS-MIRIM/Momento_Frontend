@@ -140,9 +140,13 @@ const Card = styled.form`
 const Content = styled.div`
   flex: 1;
   display: flex;
+  margin-top: 50%;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
+  align-items: center;
+  position: relative;
   gap: 24px;
+  padding-top: 24px;
 `;
 
 const StepArea = styled.div`
