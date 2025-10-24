@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 import styled from "styled-components";
 import logo from "../assets/logo.png";
 import error from "../assets/error.png";
-// import ApiService from "../utils/api"; // TODO: 연결되면 API 호출 활성화
+import ApiService from "../services/api.js";
+import { useAuth } from "../contexts/AuthContext.jsx";
 
 const ErrorText = ({ children }) => (
   <StyledErrorText>
@@ -38,28 +39,39 @@ const SignUpScreen = ({
   const [currentStep, setCurrentStep] = useState(0);
   const [role, setRole] = useState("");
 
+  const [name, setName] = useState("");
   const [educationOffice, setEducationOffice] = useState("");
   const [schoolName, setSchoolName] = useState("");
   const [grade, setGrade] = useState("");
   const [classNumber, setClassNumber] = useState("");
   const [studentNumber, setStudentNumber] = useState("");
+  const [subject, setSubject] = useState("");
+  const [homeroomGrade, setHomeroomGrade] = useState("");
+  const [homeroomClass, setHomeroomClass] = useState("");
 
   const [userId, setUserId] = useState("");
   const [isIdValid, setIsIdValid] = useState(false);
   const [isIdChecked, setIsIdChecked] = useState(false);
+  const [isCheckingId, setIsCheckingId] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
 
   // errors & submitting
+  const [nameError, setNameError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [passwordConfirmError, setPasswordConfirmError] = useState("");
   const [idError, setIdError] = useState("");
   const [educationOfficeError, setEducationOfficeError] = useState("");
   const [schoolNameError, setSchoolNameError] = useState("");
   const [schoolDetailError, setSchoolDetailError] = useState("");
+  const [subjectError, setSubjectError] = useState("");
+  const [homeroomError, setHomeroomError] = useState("");
+  const [formError, setFormError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { login } = useAuth();
 
   const validatePassword = (pass) => {
     const hasMinLength = pass.length >= 8;
@@ -81,21 +93,63 @@ const SignUpScreen = ({
     [password, passwordConfirm, passwordError, passwordConfirmError]
   );
 
+  const handleRoleSelect = (selectedRole) => {
+    setRole(selectedRole);
+    setFormError("");
+
+    if (selectedRole === "student") {
+      setSubject("");
+      setHomeroomGrade("");
+      setHomeroomClass("");
+      setSubjectError("");
+      setHomeroomError("");
+    }
+
+    if (selectedRole === "teacher") {
+      setGrade("");
+      setClassNumber("");
+      setStudentNumber("");
+      setSchoolDetailError("");
+    }
+  };
+
   const canSubmit = useMemo(() => {
     if (currentStep === 0) {
       return !!role;
     }
     if (currentStep === 1) {
-      return (
-        educationOffice.trim().length > 0 &&
-        schoolName.trim().length > 0 &&
-        grade.trim().length > 0 &&
-        classNumber.trim().length > 0 &&
-        studentNumber.trim().length > 0
-      );
+      if (!name.trim() || !educationOffice.trim() || !schoolName.trim()) {
+        return false;
+      }
+
+      if (role === "student") {
+        return (
+          grade.trim().length > 0 &&
+          classNumber.trim().length > 0 &&
+          studentNumber.trim().length > 0
+        );
+      }
+
+      if (role === "teacher") {
+        if (!subject.trim()) {
+          return false;
+        }
+
+        const hasHomeroomData =
+          homeroomGrade.trim().length > 0 || homeroomClass.trim().length > 0;
+        if (hasHomeroomData) {
+          return (
+            homeroomGrade.trim().length > 0 &&
+            homeroomClass.trim().length > 0
+          );
+        }
+
+        return true;
+      }
+      return false;
     }
     if (currentStep === 2) {
-      return isIdValid;
+      return isIdValid && !isCheckingId;
     }
     if (currentStep === 3) {
       return isPasswordValid;
@@ -104,16 +158,21 @@ const SignUpScreen = ({
   }, [
     currentStep,
     role,
+    name,
     educationOffice,
     schoolName,
     grade,
     classNumber,
     studentNumber,
+    subject,
+    homeroomGrade,
+    homeroomClass,
     isIdValid,
+    isCheckingId,
     isPasswordValid,
   ]);
 
-  const checkIdDuplicate = () => {
+  const checkIdDuplicate = async () => {
     if (!userId.trim()) {
       setIdError("아이디를 입력해주세요.");
       return;
@@ -124,9 +183,28 @@ const SignUpScreen = ({
       return;
     }
     setIdError("");
-    setIsIdValid(true);
-    setIsIdChecked(true);
-    console.log("사용 가능한 아이디 형식입니다.");
+    setIsCheckingId(true);
+    try {
+      const { haveId } = await ApiService.checkUserId(userId.trim());
+      if (haveId) {
+        setIdError("이미 사용 중인 아이디입니다.");
+        setIsIdValid(false);
+      } else {
+        setIsIdValid(true);
+      }
+      setIsIdChecked(true);
+    } catch (error) {
+      console.error("ID duplicate check failed", error);
+      const message =
+        error?.data?.message ||
+        error?.message ||
+        "아이디 확인 중 오류가 발생했습니다.";
+      setIdError(message);
+      setIsIdChecked(false);
+      setIsIdValid(false);
+    } finally {
+      setIsCheckingId(false);
+    }
   };
 
   const handleIdChange = (e) => {
@@ -134,6 +212,7 @@ const SignUpScreen = ({
     setIsIdChecked(false);
     setIsIdValid(false);
     setIdError("");
+    if (formError) setFormError("");
   };
 
   const handlePasswordChange = (e) => {
@@ -141,6 +220,7 @@ const SignUpScreen = ({
     setPassword(value);
     const error = validatePassword(value);
     setPasswordError(error);
+    if (formError) setFormError("");
 
     if (passwordConfirm && value !== passwordConfirm) {
       setPasswordConfirmError("비밀번호가 일치하지 않습니다.");
@@ -152,6 +232,7 @@ const SignUpScreen = ({
   const handlePasswordConfirmChange = (e) => {
     const value = e.target.value;
     setPasswordConfirm(value);
+    if (formError) setFormError("");
     if (value && value !== password) {
       setPasswordConfirmError("비밀번호가 일치하지 않습니다.");
     } else {
@@ -161,7 +242,8 @@ const SignUpScreen = ({
 
   const handleNext = async (e) => {
     e.preventDefault();
-    if (!canSubmit || isSubmitting) return;
+    if (isSubmitting || !canSubmit) return;
+    setFormError("");
 
     if (currentStep === 0) {
       setCurrentStep(1);
@@ -170,6 +252,13 @@ const SignUpScreen = ({
 
     if (currentStep === 1) {
       let hasError = false;
+
+      if (!name.trim()) {
+        setNameError("이름을 입력해주세요.");
+        hasError = true;
+      } else {
+        setNameError("");
+      }
 
       if (!educationOffice.trim()) {
         setEducationOfficeError("교육청을 선택해주세요.");
@@ -185,10 +274,34 @@ const SignUpScreen = ({
         setSchoolNameError("");
       }
 
-      if (!grade.trim() || !classNumber.trim() || !studentNumber.trim()) {
-        setSchoolDetailError("학년, 반, 번호를 모두 입력해주세요.");
-        hasError = true;
-      } else {
+      if (role === "student") {
+        if (!grade.trim() || !classNumber.trim() || !studentNumber.trim()) {
+          setSchoolDetailError("학년, 반, 번호를 모두 입력해주세요.");
+          hasError = true;
+        } else {
+          setSchoolDetailError("");
+        }
+        setSubjectError("");
+        setHomeroomError("");
+      }
+
+      if (role === "teacher") {
+        if (!subject.trim()) {
+          setSubjectError("담당 과목을 입력해주세요.");
+          hasError = true;
+        } else {
+          setSubjectError("");
+        }
+
+        const hasHomeroomGrade = homeroomGrade.trim().length > 0;
+        const hasHomeroomClass = homeroomClass.trim().length > 0;
+        if (hasHomeroomGrade !== hasHomeroomClass) {
+          setHomeroomError("담임 학년과 담임 반을 모두 입력해주세요.");
+          hasError = true;
+        } else {
+          setHomeroomError("");
+        }
+
         setSchoolDetailError("");
       }
 
@@ -216,17 +329,52 @@ const SignUpScreen = ({
       if (!isPasswordValid) return;
       setIsSubmitting(true);
       try {
-        // await ApiService.register({...});
-        // await ApiService.login({...});
+        const basePayload = {
+          role,
+          name: name.trim(),
+          userId: userId.trim(),
+          school: schoolName.trim(),
+          password,
+        };
+
+        let payload = basePayload;
+        if (role === "student") {
+          payload = {
+            ...basePayload,
+            grade: Number(grade),
+            class: Number(classNumber),
+            studentNumber: Number(studentNumber),
+          };
+        } else if (role === "teacher") {
+          payload = {
+            ...basePayload,
+            subject: subject.trim(),
+          };
+          if (homeroomGrade.trim()) {
+            payload.homeroomGrade = Number(homeroomGrade);
+          }
+          if (homeroomClass.trim()) {
+            payload.homeroomClass = Number(homeroomClass);
+          }
+        }
+
+        await ApiService.register(payload);
+        await login(userId.trim(), password);
 
         try {
-          // localStorage.setItem("isFirstSignUp", "true");
+          localStorage.setItem("isFirstSignUp", "true");
         } catch (storageError) {
           console.warn("Unable to access localStorage", storageError);
         }
+
         onSignUpSuccess();
       } catch (err) {
-        console.error("Signup error (placeholder)", err);
+        console.error("Signup error", err);
+        const message =
+          err?.data?.message ||
+          err?.message ||
+          "회원가입 중 문제가 발생했습니다.";
+        setFormError(message);
       } finally {
         setIsSubmitting(false);
       }
@@ -248,7 +396,7 @@ const SignUpScreen = ({
             <RoleCard
               type="button"
               selected={role === "student"}
-              onClick={() => setRole("student")}
+              onClick={() => handleRoleSelect("student")}
             >
               <RoleIcon aria-hidden>🎒</RoleIcon>
               <RoleDesc>수업 참여, 과제 제출</RoleDesc>
@@ -259,7 +407,7 @@ const SignUpScreen = ({
             <RoleCard
               type="button"
               selected={role === "teacher"}
-              onClick={() => setRole("teacher")}
+              onClick={() => handleRoleSelect("teacher")}
             >
               <RoleIcon aria-hidden>👩‍🏫</RoleIcon>
               <RoleDesc>수업 관리, 과제 배포</RoleDesc>
@@ -278,10 +426,24 @@ const SignUpScreen = ({
             <LogoImg src={logo} alt="로고" />
             에서 사용하실
             <br />
-            학교를 입력해주세요.
+            기본 정보를 입력해주세요.
           </StepTitle>
 
-          {/* 교육청 선택 */}
+          <Field>
+            <InputWrapper hasError={Boolean(nameError)}>
+              <StyledInput
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (nameError) setNameError("");
+                }}
+                placeholder="이름을 입력해주세요."
+                autoComplete="name"
+              />
+            </InputWrapper>
+            {nameError && <ErrorText>{nameError}</ErrorText>}
+          </Field>
+
           <Field>
             <InputWrapper hasError={Boolean(educationOfficeError)}>
               <StyledSelect
@@ -304,7 +466,6 @@ const SignUpScreen = ({
             )}
           </Field>
 
-          {/* 학교명 */}
           <Field>
             <InputWrapper hasError={Boolean(schoolNameError)}>
               <StyledInput
@@ -319,49 +480,101 @@ const SignUpScreen = ({
             {schoolNameError && <ErrorText>{schoolNameError}</ErrorText>}
           </Field>
 
-          <Field>
-            <InlineFieldGroup>
-              <InlineInputWrapper hasError={Boolean(schoolDetailError)}>
-                <StyledInputSmall
-                  value={grade}
-                  onChange={(e) => {
-                    setGrade(e.target.value);
-                    if (schoolDetailError) setSchoolDetailError("");
-                  }}
-                  placeholder="학년"
-                  inputMode="numeric"
-                />
-                <InlineSuffix>학년</InlineSuffix>
-              </InlineInputWrapper>
+          {role === "student" && (
+            <Field>
+              <InlineFieldGroup>
+                <InlineInputWrapper hasError={Boolean(schoolDetailError)}>
+                  <StyledInputSmall
+                    value={grade}
+                    onChange={(e) => {
+                      setGrade(e.target.value);
+                      if (schoolDetailError) setSchoolDetailError("");
+                    }}
+                    placeholder="학년"
+                    inputMode="numeric"
+                  />
+                  <InlineSuffix>학년</InlineSuffix>
+                </InlineInputWrapper>
 
-              <InlineInputWrapper hasError={Boolean(schoolDetailError)}>
-                <StyledInputSmall
-                  value={classNumber}
-                  onChange={(e) => {
-                    setClassNumber(e.target.value);
-                    if (schoolDetailError) setSchoolDetailError("");
-                  }}
-                  placeholder="반"
-                  inputMode="numeric"
-                />
-                <InlineSuffix>반</InlineSuffix>
-              </InlineInputWrapper>
+                <InlineInputWrapper hasError={Boolean(schoolDetailError)}>
+                  <StyledInputSmall
+                    value={classNumber}
+                    onChange={(e) => {
+                      setClassNumber(e.target.value);
+                      if (schoolDetailError) setSchoolDetailError("");
+                    }}
+                    placeholder="반"
+                    inputMode="numeric"
+                  />
+                  <InlineSuffix>반</InlineSuffix>
+                </InlineInputWrapper>
 
-              <InlineInputWrapper hasError={Boolean(schoolDetailError)}>
-                <StyledInputSmall
-                  value={studentNumber}
-                  onChange={(e) => {
-                    setStudentNumber(e.target.value);
-                    if (schoolDetailError) setSchoolDetailError("");
-                  }}
-                  placeholder="번호"
-                  inputMode="numeric"
-                />
-                <InlineSuffix>번</InlineSuffix>
-              </InlineInputWrapper>
-            </InlineFieldGroup>
-            {schoolDetailError && <ErrorText>{schoolDetailError}</ErrorText>}
-          </Field>
+                <InlineInputWrapper hasError={Boolean(schoolDetailError)}>
+                  <StyledInputSmall
+                    value={studentNumber}
+                    onChange={(e) => {
+                      setStudentNumber(e.target.value);
+                      if (schoolDetailError) setSchoolDetailError("");
+                    }}
+                    placeholder="번호"
+                    inputMode="numeric"
+                  />
+                  <InlineSuffix>번</InlineSuffix>
+                </InlineInputWrapper>
+              </InlineFieldGroup>
+              {schoolDetailError && <ErrorText>{schoolDetailError}</ErrorText>}
+            </Field>
+          )}
+
+          {role === "teacher" && (
+            <>
+              <Field>
+                <InputWrapper hasError={Boolean(subjectError)}>
+                  <StyledInput
+                    value={subject}
+                    onChange={(e) => {
+                      setSubject(e.target.value);
+                      if (subjectError) setSubjectError("");
+                    }}
+                    placeholder="담당 과목을 입력해주세요."
+                    autoComplete="organization-title"
+                  />
+                </InputWrapper>
+                {subjectError && <ErrorText>{subjectError}</ErrorText>}
+              </Field>
+
+              <Field>
+                <InlineFieldGroup>
+                  <InlineInputWrapper hasError={Boolean(homeroomError)}>
+                    <StyledInputSmall
+                      value={homeroomGrade}
+                      onChange={(e) => {
+                        setHomeroomGrade(e.target.value);
+                        if (homeroomError) setHomeroomError("");
+                      }}
+                      placeholder="담임 학년 (선택)"
+                      inputMode="numeric"
+                    />
+                    <InlineSuffix>학년</InlineSuffix>
+                  </InlineInputWrapper>
+
+                  <InlineInputWrapper hasError={Boolean(homeroomError)}>
+                    <StyledInputSmall
+                      value={homeroomClass}
+                      onChange={(e) => {
+                        setHomeroomClass(e.target.value);
+                        if (homeroomError) setHomeroomError("");
+                      }}
+                      placeholder="담임 반 (선택)"
+                      inputMode="numeric"
+                    />
+                    <InlineSuffix>반</InlineSuffix>
+                  </InlineInputWrapper>
+                </InlineFieldGroup>
+                {homeroomError && <ErrorText>{homeroomError}</ErrorText>}
+              </Field>
+            </>
+          )}
         </>
       );
     }
@@ -383,8 +596,12 @@ const SignUpScreen = ({
                 placeholder="아이디를 입력해주세요."
                 autoComplete="username"
               />
-              <OutlineButton type="button" onClick={checkIdDuplicate}>
-                중복 확인
+              <OutlineButton
+                type="button"
+                onClick={checkIdDuplicate}
+                disabled={isCheckingId}
+              >
+                {isCheckingId ? "확인 중..." : "중복 확인"}
               </OutlineButton>
             </InputWrapper>
             {idError && <ErrorText>{idError}</ErrorText>}
@@ -440,14 +657,18 @@ const SignUpScreen = ({
     );
   };
 
-  const primaryLabel =
-    currentStep === 3 ? "완료" : currentStep === 0 ? "다음으로" : "다음으로";
+  const primaryLabel = isSubmitting
+    ? "처리 중..."
+    : currentStep === 3
+    ? "완료"
+    : "다음으로";
 
   return (
     <Container>
       <Card onSubmit={handleNext}>
         <Content>
           <StepArea>{renderStepContent()}</StepArea>
+          {formError && <FormError>{formError}</FormError>}
         </Content>
 
         <ButtonGroup>
@@ -632,6 +853,11 @@ const OutlineButton = styled.button`
   &:hover {
     background-color: rgba(5, 186, 174, 0.1);
   }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: transparent;
+  }
 `;
 
 const ErrorIcon = styled.img`
@@ -639,6 +865,19 @@ const ErrorIcon = styled.img`
   height: 16px;
   margin-right: 4px;
   flex-shrink: 0;
+`;
+
+const FormError = styled.div`
+  width: 100%;
+  max-width: 340px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #ffecec;
+  color: #d93025;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  box-shadow: inset 0 0 0 1px rgba(217, 48, 37, 0.08);
 `;
 
 const StyledErrorText = styled.span`

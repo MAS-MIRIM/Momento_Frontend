@@ -2,11 +2,12 @@ import "./App.css";
 import { BrowserRouter, Route, Routes, useNavigate } from "react-router-dom";
 import Welcome from "./pages/Welcome";
 import LoginScreen from "./pages/LoginPage";
-import SignUpScreen from "./pages/SignupPage";
+import SignUpScreen from "./pages/SignUpPage";
 import HomePage from "./pages/HomePage";
 import CalendarPage from "./pages/CalendarPage";
+import ClockPage from "./pages/ClockPage";
 import TimetablePage from "./pages/TimetablePage";
-// import ProfilePage from "./pages/ProfilePage";
+import ProfilePage from "./pages/ProfilePage";
 
 const App = () => {
   return (
@@ -17,8 +18,9 @@ const App = () => {
         <Route path="/signup" element={<SignUpRoute />} />
         <Route path="/home" element={<HomeRoute />} />
         <Route path="/calendar" element={<CalendarRoute />} />
-        <Route path="/timetable" element={<TimetablePage />} />
-        {/* <Route path="/profile" element={<ProfilePage />} /> */}
+        <Route path="/clock" element={<ClockRoute />} />
+        <Route path="/timetable" element={<TimetableRoute />} />
+        <Route path="/profile" element={<ProfileRoute />} />
       </Routes>
     </BrowserRouter>
   );
@@ -56,7 +58,7 @@ const SignUpRoute = () => {
   return (
     <div className="app-container">
       <SignUpScreen
-        onLoginSuccess={() => navigate("/home")}
+        onSignUpSuccess={() => navigate("/home")}
         onLoginPress={() => navigate("/login")}
       />
     </div>
@@ -79,6 +81,14 @@ const CalendarRoute = () => {
   );
 };
 
+const ClockRoute = () => {
+  return (
+    <div className="app-container">
+      <ClockPage />
+    </div>
+  );
+};
+
 const TimetableRoute = () => {
   return (
     <div className="app-container">
@@ -87,12 +97,12 @@ const TimetableRoute = () => {
   );
 };
 
-// const ProfileRoute = () => {
-//   return (
-//     <div className="app-container">
-//       <ProfilePage />
-//     </div>
-//   );
-// };
+const ProfileRoute = () => {
+  return (
+    <div className="app-container">
+      <ProfilePage />
+    </div>
+  );
+};
 
 export default App;
