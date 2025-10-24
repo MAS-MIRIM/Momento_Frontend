@@ -1,6 +1,6 @@
 import React from "react";
-import { NavLink, useLocation } from "react-router-dom";
-import styled, { css } from "styled-components";
+import { NavLink } from "react-router-dom";
+import styled from "styled-components";
 
 import HomeIcon from "../assets/icons/home.svg";
 import ClockIcon from "../assets/icons/clock.svg";
@@ -8,90 +8,6 @@ import CalenderIcon from "../assets/icons/calender.svg";
 import ProfileIcon from "../assets/icons/profile.svg";
 
 const TAB_HEIGHT = 92;
-const ACTIVE = "#05BAAE";
-const INACTIVE = "#999999";
-
-const TabNavigation = () => {
-  const location = useLocation();
-
-  const getFilter = (isActive) =>
-    isActive
-      ? "invert(53%) sepia(81%) saturate(407%) hue-rotate(128deg) brightness(94%) contrast(92%)"
-      : "grayscale(1)";
-
-  return (
-    <BottomTabWrap>
-      <TabItem to="/" $isActive={location.pathname === "/"}>
-        <IconWrap>
-          <img
-            src={HomeIcon}
-            alt="home"
-            width={24}
-            height={24}
-            style={{ filter: getFilter(location.pathname === "/") }}
-          />
-        </IconWrap>
-        <Label $active={location.pathname === "/"}>Home</Label>
-      </TabItem>
-
-      <TabItem
-        to="/clock"
-        $isActive={location.pathname.startsWith("/shortpick")}
-      >
-        <IconWrap>
-          <img
-            src={ClockIcon}
-            alt="clock"
-            width={24}
-            height={24}
-            style={{
-              filter: getFilter(location.pathname.startsWith("/Timetable")),
-            }}
-          />
-        </IconWrap>
-        <Label $active={location.pathname.startsWith("/Timetable")}>
-          Clock
-        </Label>
-      </TabItem>
-
-      <TabItem to="/" $isActive={location.pathname.startsWith("/Calender")}>
-        <IconWrap>
-          <img
-            src={CalenderIcon}
-            alt="Calender"
-            width={24}
-            height={24}
-            style={{
-              filter: getFilter(location.pathname.startsWith("/Calender")),
-            }}
-          />
-        </IconWrap>
-        <Label $active={location.pathname.startsWith("/Calender")}>
-          Calender
-        </Label>
-      </TabItem>
-
-      <TabItem to="/" $isActive={location.pathname.startsWith("/Profile")}>
-        <IconWrap>
-          <img
-            src={ProfileIcon}
-            alt="Profile"
-            width={24}
-            height={24}
-            style={{
-              filter: getFilter(location.pathname.startsWith("/Profile")),
-            }}
-          />
-        </IconWrap>
-        <Label $active={location.pathname.startsWith("/Profile")}>
-          Profile
-        </Label>
-      </TabItem>
-    </BottomTabWrap>
-  );
-};
-
-export default TabNavigation;
 
 const BottomTabWrap = styled.nav`
   position: fixed;
@@ -110,20 +26,26 @@ const BottomTabWrap = styled.nav`
   z-index: 1000;
 `;
 
-const activeCss = css`
-  color: ${ACTIVE};
+const Pill = styled.div`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 9999px;
+  padding: 10px 10px;
+  background: transparent;
+  transition: background-color 0.25s ease, padding 0.25s ease,
+    box-shadow 0.25s ease;
 `;
 
-const TabItem = styled(NavLink)`
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  text-decoration: none;
-  color: ${INACTIVE};
-  gap: 4px;
-  ${(p) => (p.$isActive ? activeCss : undefined)}
+const Label = styled.span`
+  font-size: 12px;
+  color: #05baae;
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 0;
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: max-width 0.35s ease, opacity 0.25s ease, transform 0.35s ease;
 `;
 
 const IconWrap = styled.span`
@@ -134,8 +56,79 @@ const IconWrap = styled.span`
   height: 28px;
 `;
 
-const Label = styled.span`
-  font-size: 12px;
-  margin-top: 4px;
-  ${(p) => (p.$active ? `color: ${ACTIVE};` : `color: ${INACTIVE};`)}
+const TabItem = styled(NavLink)`
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  text-decoration: none;
+
+  &.active ${Pill} {
+    background: #daf2f0;
+    padding: 10px 14px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  }
+
+  &.active ${Label} {
+    max-width: 120px;
+    opacity: 1;
+    transform: translateX(0);
+  }
 `;
+
+const TabNavigation = () => {
+  return (
+    <BottomTabWrap>
+      <TabItem
+        to="/home"
+        end
+        className={({ isActive }) => (isActive ? "active" : "")}
+      >
+        <Pill>
+          <IconWrap>
+            <img src={HomeIcon} alt="home" width={24} height={24} />
+          </IconWrap>
+          <Label>Home</Label>
+        </Pill>
+      </TabItem>
+
+      <TabItem
+        to="/clock"
+        className={({ isActive }) => (isActive ? "active" : "")}
+      >
+        <Pill>
+          <IconWrap>
+            <img src={ClockIcon} alt="clock" width={24} height={24} />
+          </IconWrap>
+          <Label>Clock</Label>
+        </Pill>
+      </TabItem>
+
+      <TabItem
+        to="/calender"
+        className={({ isActive }) => (isActive ? "active" : "")}
+      >
+        <Pill>
+          <IconWrap>
+            <img src={CalenderIcon} alt="calender" width={24} height={24} />
+          </IconWrap>
+          <Label>Calender</Label>
+        </Pill>
+      </TabItem>
+
+      <TabItem
+        to="/profile"
+        className={({ isActive }) => (isActive ? "active" : "")}
+      >
+        <Pill>
+          <IconWrap>
+            <img src={ProfileIcon} alt="profile" width={24} height={24} />
+          </IconWrap>
+          <Label>Profile</Label>
+        </Pill>
+      </TabItem>
+    </BottomTabWrap>
+  );
+};
+
+export default TabNavigation;
