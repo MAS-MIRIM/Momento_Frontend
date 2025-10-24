@@ -12,34 +12,7 @@ const ACTIVE = "#05BAAE";
 const INACTIVE = "#999999";
 
 const TabNavigation = () => {
-  const { pathname } = useLocation();
-
-  const tabs = [
-    {
-      to: "/home",
-      label: "Home",
-      icon: HomeIcon,
-      isActive: (path) => path === "/home" || path === "/",
-    },
-    {
-      to: "/clock",
-      label: "Clock",
-      icon: ClockIcon,
-      isActive: (path) => path.startsWith("/clock"),
-    },
-    {
-      to: "/calendar",
-      label: "Calendar",
-      icon: CalenderIcon,
-      isActive: (path) => path.startsWith("/calendar"),
-    },
-    {
-      to: "/profile",
-      label: "Profile",
-      icon: ProfileIcon,
-      isActive: (path) => path.startsWith("/profile"),
-    },
-  ];
+  const location = useLocation();
 
   const getFilter = (isActive) =>
     isActive
@@ -48,23 +21,72 @@ const TabNavigation = () => {
 
   return (
     <BottomTabWrap>
-      {tabs.map(({ to, label, icon, isActive }) => {
-        const active = isActive(pathname);
-        return (
-          <TabItem key={to} to={to} $isActive={active}>
-            <IconWrap>
-              <img
-                src={icon}
-                alt={label}
-                width={24}
-                height={24}
-                style={{ filter: getFilter(active) }}
-              />
-            </IconWrap>
-            <Label $active={active}>{label}</Label>
-          </TabItem>
-        );
-      })}
+      <TabItem to="/" $isActive={location.pathname === "/"}>
+        <IconWrap>
+          <img
+            src={HomeIcon}
+            alt="home"
+            width={24}
+            height={24}
+            style={{ filter: getFilter(location.pathname === "/") }}
+          />
+        </IconWrap>
+        <Label $active={location.pathname === "/"}>Home</Label>
+      </TabItem>
+
+      <TabItem
+        to="/clock"
+        $isActive={location.pathname.startsWith("/shortpick")}
+      >
+        <IconWrap>
+          <img
+            src={ClockIcon}
+            alt="clock"
+            width={24}
+            height={24}
+            style={{
+              filter: getFilter(location.pathname.startsWith("/Timetable")),
+            }}
+          />
+        </IconWrap>
+        <Label $active={location.pathname.startsWith("/Timetable")}>
+          Clock
+        </Label>
+      </TabItem>
+
+      <TabItem to="/" $isActive={location.pathname.startsWith("/Calender")}>
+        <IconWrap>
+          <img
+            src={CalenderIcon}
+            alt="Calender"
+            width={24}
+            height={24}
+            style={{
+              filter: getFilter(location.pathname.startsWith("/Calender")),
+            }}
+          />
+        </IconWrap>
+        <Label $active={location.pathname.startsWith("/Calender")}>
+          Calender
+        </Label>
+      </TabItem>
+
+      <TabItem to="/" $isActive={location.pathname.startsWith("/Profile")}>
+        <IconWrap>
+          <img
+            src={ProfileIcon}
+            alt="Profile"
+            width={24}
+            height={24}
+            style={{
+              filter: getFilter(location.pathname.startsWith("/Profile")),
+            }}
+          />
+        </IconWrap>
+        <Label $active={location.pathname.startsWith("/Profile")}>
+          Profile
+        </Label>
+      </TabItem>
     </BottomTabWrap>
   );
 };
@@ -72,7 +94,7 @@ const TabNavigation = () => {
 export default TabNavigation;
 
 const BottomTabWrap = styled.nav`
-  position: absolute;
+  position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
