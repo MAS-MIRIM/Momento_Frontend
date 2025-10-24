@@ -99,13 +99,15 @@ const BottomTabWrap = styled.nav`
   right: 0;
   bottom: 0;
   height: ${TAB_HEIGHT}px;
-  padding-top: 12px;
-  padding-bottom: calc(34px + env(safe-area-inset-bottom, 0px));
-  background-color: #ffffff;
-  border-top: 1px solid #f5f5f5;
+  padding: 12px 24px calc(28px + env(safe-area-inset-bottom, 0px));
+  background-color: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(245, 245, 245, 0.8);
+  box-shadow: 0 -12px 32px rgba(17, 17, 17, 0.08);
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   align-items: end;
+  z-index: 1000;
 `;
 
 const activeCss = css`

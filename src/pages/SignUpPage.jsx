@@ -158,11 +158,7 @@ const SignUpScreen = ({
         setSchoolNameError("");
       }
 
-      if (
-        !grade.trim() ||
-        !classNumber.trim() ||
-        !studentNumber.trim()
-      ) {
+      if (!grade.trim() || !classNumber.trim() || !studentNumber.trim()) {
         setSchoolDetailError("학년, 반, 번호를 모두 입력해주세요.");
         hasError = true;
       } else {
@@ -271,13 +267,66 @@ const SignUpScreen = ({
             학교를 입력해주세요.
           </StepTitle>
           <Field>
-            <InputWrapper>
+            <InputWrapper hasError={Boolean(schoolNameError)}>
               <StyledInput
-                value={nickname}
-                onChange={(event) => setNickname(event.target.value)}
+                value={schoolName}
+                onChange={(event) => {
+                  setSchoolName(event.target.value);
+                  if (schoolNameError) {
+                    setSchoolNameError("");
+                  }
+                }}
                 placeholder="학교명을 입력해주세요."
               />
             </InputWrapper>
+            {schoolNameError && <ErrorText>{schoolNameError}</ErrorText>}
+          </Field>
+          <Field>
+            <InlineFieldGroup>
+              <InlineInputWrapper hasError={Boolean(schoolDetailError)}>
+                <StyledInput2
+                  value={grade}
+                  onChange={(event) => {
+                    setGrade(event.target.value);
+                    if (schoolDetailError) {
+                      setSchoolDetailError("");
+                    }
+                  }}
+                  placeholder="학년"
+                  inputMode="numeric"
+                />
+                <InlineSuffix>학년</InlineSuffix>
+              </InlineInputWrapper>
+              <InlineInputWrapper hasError={Boolean(schoolDetailError)}>
+                <StyledInput2
+                  value={classNumber}
+                  onChange={(event) => {
+                    setClassNumber(event.target.value);
+                    if (schoolDetailError) {
+                      setSchoolDetailError("");
+                    }
+                  }}
+                  placeholder="반"
+                  inputMode="numeric"
+                />
+                <InlineSuffix>반</InlineSuffix>
+              </InlineInputWrapper>
+              <InlineInputWrapper hasError={Boolean(schoolDetailError)}>
+                <StyledInput2
+                  value={studentNumber}
+                  onChange={(event) => {
+                    setStudentNumber(event.target.value);
+                    if (schoolDetailError) {
+                      setSchoolDetailError("");
+                    }
+                  }}
+                  placeholder="번호"
+                  inputMode="numeric"
+                />
+                <InlineSuffix>번</InlineSuffix>
+              </InlineInputWrapper>
+            </InlineFieldGroup>
+            {schoolDetailError && <ErrorText>{schoolDetailError}</ErrorText>}
           </Field>
         </>
       );
@@ -449,6 +498,13 @@ const Field = styled.div`
   width: 100%;
 `;
 
+const InlineFieldGroup = styled.div`
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 340px;
+`;
+
 const InputWrapper = styled.div`
   display: flex;
   font-family: "Pretendard";
@@ -466,7 +522,29 @@ const InputWrapper = styled.div`
   }
 `;
 
+const InlineInputWrapper = styled(InputWrapper)`
+  flex: 1;
+  max-width: none;
+  padding-right: 10px;
+`;
+
 const StyledInput = styled.input`
+  flex: 1;
+  font-family: "Pretendard";
+  border: none;
+  padding: 14px 0;
+  font-size: 16px;
+  outline: none;
+  background: transparent;
+  color: #111111;
+
+  ::placeholder {
+    color: #a7a7a7;
+    font-family: "Pretendard";
+  }
+`;
+
+const StyledInput2 = styled.input`
   flex: 1;
   font-family: "Pretendard";
   border: none;
@@ -527,6 +605,13 @@ const StyledErrorText = styled.span`
   align-items: center;
   padding-left: 2px;
   margin-top: 4px;
+`;
+
+const InlineSuffix = styled.span`
+  font-size: 14px;
+  color: #666666;
+  margin-left: 6px;
+  flex-shrink: 0;
 `;
 
 const ButtonGroup = styled.div`
