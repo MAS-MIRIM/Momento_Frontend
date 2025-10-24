@@ -102,7 +102,7 @@ const Cell = styled.button`
   background: #ffffff;
   border: none;
   border-radius: 12px;
-  height: 92px;
+  height: 82px;
   padding: 8px;
   min-width: 0;
   text-align: left;
