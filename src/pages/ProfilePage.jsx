@@ -1,17 +1,18 @@
 import { useMemo } from "react";
 import styled from "styled-components";
+import Header from "../components/Header.jsx";
 import { useAuth } from "../contexts/AuthContext.jsx";
 import TabNavigation from "../components/TabNavigation.jsx";
 
 const Container = styled.div`
-  flex: 1;
+  width: 100%;
+  height: 100%;
+  background: #fff;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 32px 20px 120px;
-  background-color: #f7f9fa;
-  min-height: 100%;
   position: relative;
+  padding: 20px;
 `;
 
 const Card = styled.section`
@@ -24,24 +25,6 @@ const Card = styled.section`
   display: flex;
   flex-direction: column;
   gap: 20px;
-`;
-
-const Header = styled.header`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-`;
-
-const Title = styled.h1`
-  font-size: 24px;
-  font-weight: 700;
-  margin: 0;
-`;
-
-const Subtitle = styled.p`
-  margin: 0;
-  color: #57606a;
-  font-size: 14px;
 `;
 
 const InfoList = styled.dl`
@@ -191,42 +174,40 @@ const ProfilePage = () => {
   }
 
   return (
-    <Container>
-      <Card>
-        <Header>
-          <Title>{user.name}님</Title>
-          <Subtitle>가입하신 정보를 확인하고 관리할 수 있어요.</Subtitle>
-        </Header>
+    <>
+      <Header />
+      <Container>
+        <Card>
+          <InfoList>
+            {profileEntries.map((entry) => (
+              <div key={`${entry.label}-${entry.value}`}>
+                <Term>{entry.label}</Term>
+                <Detail>{entry.value ?? "-"}</Detail>
+              </div>
+            ))}
+          </InfoList>
 
-        <InfoList>
-          {profileEntries.map((entry) => (
-            <div key={`${entry.label}-${entry.value}`}>
-              <Term>{entry.label}</Term>
-              <Detail>{entry.value ?? "-"}</Detail>
-            </div>
-          ))}
-        </InfoList>
+          {error && (
+            <ErrorText>
+              프로필 정보를 불러오는 중 오류가 발생했습니다. 다시 시도해주세요.
+            </ErrorText>
+          )}
 
-        {error && (
-          <ErrorText>
-            프로필 정보를 불러오는 중 오류가 발생했습니다. 다시 시도해주세요.
-          </ErrorText>
-        )}
-
-        <ActionBar>
-          <OutlineButton
-            type="button"
-            onClick={() => refreshProfile().catch(() => {})}
-          >
-            새로고침
-          </OutlineButton>
-          <PrimaryButton type="button" onClick={logout}>
-            로그아웃
-          </PrimaryButton>
-        </ActionBar>
-      </Card>
+          <ActionBar>
+            <OutlineButton
+              type="button"
+              onClick={() => refreshProfile().catch(() => {})}
+            >
+              새로고침
+            </OutlineButton>
+            <PrimaryButton type="button" onClick={logout}>
+              로그아웃
+            </PrimaryButton>
+          </ActionBar>
+        </Card>
+      </Container>
       <TabNavigation />
-    </Container>
+    </>
   );
 };
 

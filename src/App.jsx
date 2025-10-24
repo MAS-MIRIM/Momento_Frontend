@@ -5,7 +5,6 @@ import LoginScreen from "./pages/LoginPage";
 import SignUpScreen from "./pages/SignUpPage";
 import HomePage from "./pages/HomePage";
 import CalendarPage from "./pages/CalendarPage";
-import ClockPage from "./pages/ClockPage";
 import TimetablePage from "./pages/TimetablePage";
 import ProfilePage from "./pages/ProfilePage";
 import StudentPage from "./pages/StudentPage";
@@ -19,7 +18,6 @@ const App = () => {
         <Route path="/signup" element={<SignUpRoute />} />
         <Route path="/home" element={<HomeRoute />} />
         <Route path="/calendar" element={<CalendarRoute />} />
-        <Route path="/clock" element={<ClockRoute />} />
         <Route path="/timetable" element={<TimetableRoute />} />
         <Route path="/profile" element={<ProfileRoute />} />
         <Route path="/students" element={<StudentRoute />} />
@@ -79,14 +77,6 @@ const CalendarRoute = () => {
   return (
     <div className="app-container">
       <CalendarPage />
-    </div>
-  );
-};
-
-const ClockRoute = () => {
-  return (
-    <div className="app-container">
-      <ClockPage />
     </div>
   );
 };

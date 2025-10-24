@@ -1,7 +1,9 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
 import Header from "../components/Header";
 import TabNavigation from "../components/TabNavigation";
+import { useAuth } from "../contexts/AuthContext.jsx";
+import ApiService from "../services/api.js";
 
 const Container = styled.div`
   width: 100%;
@@ -82,22 +84,6 @@ const LevelXp = styled.div`
   font-size: 12px;
 `;
 
-const Bar = styled.div`
-  width: 100%;
-  height: 12px;
-  background: #f2fbfa;
-  border: 1px solid #e6f3f1;
-  border-radius: 9999px;
-  overflow: hidden;
-`;
-
-const Fill = styled.div`
-  height: 100%;
-  width: ${(p) => p.$ratio}%;
-  background: linear-gradient(90deg, #05baae, #05a0a0);
-  transition: width 0.3s ease;
-`;
-
 const CharacterCard = styled.div`
   margin-top: 12px;
   border: 1px solid #eef4f3;
@@ -114,6 +100,12 @@ const CharEmoji = styled.div`
   font-size: 48px;
   line-height: 1;
   text-align: center;
+`;
+
+const CharacterImage = styled.img`
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
 `;
 
 const CharDesc = styled.div`
@@ -173,16 +165,6 @@ const MissionTitle = styled.div`
   font-weight: 700;
 `;
 
-const Reward = styled.span`
-  font-size: 12px;
-  color: #05baae;
-  font-weight: 800;
-  background: #f2fbfa;
-  padding: 4px 8px;
-  border-radius: 9999px;
-  margin-left: 8px;
-`;
-
 const MissionRight = styled.div`
   display: flex;
   gap: 8px;
@@ -192,6 +174,12 @@ const MissionRight = styled.div`
 const DoneBadge = styled.span`
   font-size: 12px;
   color: #8aa6a1;
+`;
+
+const MissionDescription = styled.p`
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #6b7280;
 `;
 
 const PrimaryBtn = styled.button`
@@ -209,10 +197,29 @@ const PrimaryBtn = styled.button`
   }
 `;
 
+const SectionHelper = styled.p`
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: #7a8a88;
+`;
+
+
 const HomePage = () => {
-  const [coins, setCoins] = useState(120);
-  const [xp, setXp] = useState(230); // 누적 경험치
-  const [level, setLevel] = useState(3);
+  const { token } = useAuth();
+
+  const [classInfo, setClassInfo] = useState({
+    loading: false,
+    error: "",
+    coin: null,
+    image: "",
+    name: "",
+  });
+
+  const [missions, setMissions] = useState([]);
+  const [missionsLoading, setMissionsLoading] = useState(false);
+  const [missionsError, setMissionsError] = useState("");
+  const [completingId, setCompletingId] = useState(null);
+  const [missionMessage, setMissionMessage] = useState("");
 
   const [notices] = useState([
     "내일 과학 수행평가 준비물 확인하세요.",
@@ -220,45 +227,137 @@ const HomePage = () => {
     "10/30(목) 6교시 학년 체육대회 예행연습",
   ]);
 
-  const [missions, setMissions] = useState([
-    { id: 1, title: "수학 문제집 2단원 풀기", reward: 10, done: false },
-    { id: 2, title: "영어 단어 20개 암기", reward: 8, done: false },
-    { id: 3, title: "국어 수행발표 자료 만들기", reward: 15, done: true },
-    { id: 4, title: "과학 보고서 초안 작성", reward: 12, done: false },
-  ]);
+  const fetchClassCharacter = useCallback(() => {
+    if (!token) return;
+    setClassInfo((prev) => ({ ...prev, loading: true, error: "" }));
 
-  const levelName = useMemo(() => {
-    if (level >= 5) return "마스터";
-    if (level >= 3) return "에이스";
-    if (level >= 2) return "도전자";
-    return "루키";
-  }, [level]);
-
-  const characterEmoji = useMemo(() => {
-    if (level >= 5) return "🐉";
-    if (level >= 3) return "🦊";
-    if (level >= 2) return "🐥";
-    return "🐣";
-  }, [level]);
-
-  const xpInLevel = xp % 100;
-  const progress = Math.min(100, (xpInLevel / 100) * 100);
-
-  const completeMission = (id) => {
-    setMissions((prev) =>
-      prev.map((m) => (m.id === id ? { ...m, done: true } : m))
-    );
-    const m = missions.find((m) => m.id === id);
-    if (m && !m.done) {
-      setCoins((c) => c + m.reward);
-      setXp((x) => {
-        const nx = x + m.reward * 2; // 보상에 따라 경험치 가중
-        const newLevel = Math.floor(nx / 100) + 1;
-        setLevel(newLevel);
-        return nx;
+    ApiService.getClassCharacter(token)
+      .then((data) => {
+        setClassInfo({
+          loading: false,
+          error: "",
+          coin: data?.coin ?? null,
+          image: data?.image ?? "",
+          name: data?.name ?? "",
+        });
+      })
+      .catch((error) => {
+        console.error("Failed to fetch class character", error);
+        setClassInfo({
+          loading: false,
+          error:
+            error?.data?.message ||
+            error?.message ||
+            "반 캐릭터 정보를 불러오지 못했습니다.",
+          coin: null,
+          image: "",
+          name: "",
+        });
       });
-    }
-  };
+  }, [token]);
+
+  const fetchMissions = useCallback(() => {
+    if (!token) return;
+    setMissionsLoading(true);
+    setMissionsError("");
+    setMissionMessage("");
+
+    ApiService.getDailyMissions(token)
+      .then((data) => {
+        const fetched = Array.isArray(data?.missions) ? data.missions : [];
+        setMissions(
+          fetched.map((mission) => ({
+            id: mission.id,
+            title: mission.title,
+            description: mission.description,
+            missionType: mission.missionType || "regular",
+            completed: Boolean(mission.completed),
+          }))
+        );
+        if (data?.message) {
+          setMissionMessage(data.message);
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to fetch missions", error);
+        setMissionsError(
+          error?.data?.message ||
+            error?.message ||
+            "미션을 불러오지 못했습니다."
+        );
+        setMissions([]);
+      })
+      .finally(() => {
+        setMissionsLoading(false);
+      });
+  }, [token]);
+
+  const handleCompleteMission = useCallback(
+    async (mission) => {
+      if (!token || mission.completed) return;
+
+      setCompletingId(mission.id);
+      setMissionMessage("");
+
+      try {
+        const result = await ApiService.completeMission(token, {
+          missionId: mission.id,
+          missionType: mission.missionType || "regular",
+        });
+
+        setMissions((prev) =>
+          prev.map((item) =>
+            item.id === mission.id ? { ...item, completed: true } : item
+          )
+        );
+
+        const parts = [];
+        if (typeof result?.coinDelta === "number") {
+          const delta = result.coinDelta;
+          parts.push(`코인 ${delta > 0 ? "+" : ""}${delta}`);
+        }
+        if (result?.bonusGranted) {
+          parts.push("보너스 지급");
+        }
+        if (result?.message) {
+          parts.push(result.message);
+        }
+        if (parts.length === 0) {
+          parts.push("미션을 완료했습니다!");
+        }
+        setMissionMessage(parts.join(" · "));
+
+        fetchClassCharacter();
+        fetchMissions();
+      } catch (error) {
+        console.error("Failed to complete mission", error);
+        setMissionMessage(
+          error?.data?.message ||
+            error?.message ||
+            "미션 완료 처리에 실패했습니다."
+        );
+      } finally {
+        setCompletingId(null);
+      }
+    },
+    [token, fetchClassCharacter, fetchMissions]
+  );
+
+  useEffect(() => {
+    if (!token) return;
+    fetchClassCharacter();
+  }, [token, fetchClassCharacter]);
+
+  useEffect(() => {
+    if (!token) return;
+    fetchMissions();
+  }, [token, fetchMissions]);
+
+  const completedMissions = useMemo(
+    () => missions.filter((mission) => mission.completed).length,
+    [missions]
+  );
+  const remainingMissions = Math.max(0, missions.length - completedMissions);
 
   return (
     <Container>
@@ -277,64 +376,84 @@ const HomePage = () => {
       </Section>
 
       <Section>
-        <Title>레벨</Title>
-        <LevelWrap>
-          <LevelTop>
-            <LevelName>
-              {levelName} Lv.{level}
-            </LevelName>
-            <LevelXp>{xpInLevel}/100 XP</LevelXp>
-          </LevelTop>
-          <Bar>
-            <Fill $ratio={progress} />
-          </Bar>
+        <Title>우리 반 캐릭터</Title>
+        {classInfo.loading ? (
+          <SectionHelper>반 캐릭터 정보를 불러오는 중입니다...</SectionHelper>
+        ) : classInfo.error ? (
+          <SectionHelper>{classInfo.error}</SectionHelper>
+        ) : (
+          <LevelWrap>
+            <LevelTop>
+              <LevelName>현재 코인</LevelName>
+              <LevelXp>
+                {classInfo.coin !== null
+                  ? `${classInfo.coin} 코인`
+                  : "정보 없음"}
+              </LevelXp>
+            </LevelTop>
 
-          <CharacterCard>
-            <CharEmoji>{characterEmoji}</CharEmoji>
-            <CharDesc>
-              현재 등급은 <b>{levelName}</b>이에요. 미션을 완료해서 경험치를 더
-              모아보세요!
-            </CharDesc>
-          </CharacterCard>
+            <CharacterCard>
+              {classInfo.image ? (
+                <CharacterImage src={classInfo.image} alt="반 캐릭터" />
+              ) : (
+                <CharEmoji role="img" aria-label="class character">
+                  🏫
+                </CharEmoji>
+              )}
+              <CharDesc>
+                오늘 미션을 완료하면 반 코인이 올라가고 캐릭터가 성장해요!
+              </CharDesc>
+            </CharacterCard>
 
-          <SummaryRow>
-            <SummaryCard>
-              <SummaryTitle>미션</SummaryTitle>
-              <SummaryValue>
-                {missions.filter((m) => !m.done).length}개 남음
-              </SummaryValue>
-            </SummaryCard>
-            <SummaryCard>
-              <SummaryTitle>코인</SummaryTitle>
-              <SummaryValue>{coins} 코인</SummaryValue>
-            </SummaryCard>
-          </SummaryRow>
-        </LevelWrap>
+            <SummaryRow>
+              <SummaryCard>
+                <SummaryTitle>남은 미션</SummaryTitle>
+                <SummaryValue>{remainingMissions}개</SummaryValue>
+              </SummaryCard>
+              <SummaryCard>
+                <SummaryTitle>완료된 미션</SummaryTitle>
+                <SummaryValue>{completedMissions}개</SummaryValue>
+              </SummaryCard>
+            </SummaryRow>
+          </LevelWrap>
+        )}
       </Section>
 
       <Section>
         <Title>미션 리스트</Title>
-        <MissionList>
-          {missions.map((m) => (
-            <MissionRow key={m.id}>
-              <div>
-                <MissionTitle>
-                  {m.title}
-                  <Reward>+{m.reward}c</Reward>
-                </MissionTitle>
-              </div>
-              <MissionRight>
-                {m.done ? (
-                  <DoneBadge>완료됨</DoneBadge>
-                ) : (
-                  <PrimaryBtn onClick={() => completeMission(m.id)}>
-                    완료
-                  </PrimaryBtn>
-                )}
-              </MissionRight>
-            </MissionRow>
-          ))}
-        </MissionList>
+        {missionsLoading ? (
+          <SectionHelper>미션을 불러오는 중입니다...</SectionHelper>
+        ) : missionsError ? (
+          <SectionHelper>{missionsError}</SectionHelper>
+        ) : missions.length > 0 ? (
+          <MissionList>
+            {missions.map((mission) => (
+              <MissionRow key={mission.id}>
+                <div>
+                  <MissionTitle>{mission.title}</MissionTitle>
+                  {mission.description && (
+                    <MissionDescription>{mission.description}</MissionDescription>
+                  )}
+                </div>
+                <MissionRight>
+                  {mission.completed ? (
+                    <DoneBadge>완료됨</DoneBadge>
+                  ) : (
+                    <PrimaryBtn
+                      onClick={() => handleCompleteMission(mission)}
+                      disabled={mission.completed || completingId === mission.id}
+                    >
+                      {completingId === mission.id ? "처리 중..." : "완료"}
+                    </PrimaryBtn>
+                  )}
+                </MissionRight>
+              </MissionRow>
+            ))}
+          </MissionList>
+        ) : (
+          <SectionHelper>오늘 할 미션이 없습니다.</SectionHelper>
+        )}
+        {missionMessage && <SectionHelper>{missionMessage}</SectionHelper>}
       </Section>
 
       <div style={{ height: 92 }} />

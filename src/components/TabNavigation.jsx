@@ -99,7 +99,7 @@ const TabNavigation = () => {
         }
       : {
           key: "clock",
-          to: "/clock",
+          to: "/Timetable",
           label: "Clock",
           icon: ClockIcon,
         },
@@ -129,7 +129,12 @@ const TabNavigation = () => {
         >
           <Pill>
             <IconWrap>
-              <img src={tab.icon} alt={tab.label.toLowerCase()} width={24} height={24} />
+              <img
+                src={tab.icon}
+                alt={tab.label.toLowerCase()}
+                width={24}
+                height={24}
+              />
             </IconWrap>
             <Label>{tab.label}</Label>
           </Pill>

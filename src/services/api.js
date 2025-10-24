@@ -52,6 +52,17 @@ const jsonHeaders = {
   "Content-Type": "application/json",
 };
 
+const authHeaders = (token, extra = {}) => {
+  const headers = { ...defaultHeaders, ...extra };
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  return headers;
+};
+
+const authJsonHeaders = (token) =>
+  authHeaders(token, { "Content-Type": "application/json" });
+
 const ApiService = {
   async register(payload) {
     const response = await fetch(buildUrl("/user/register"), {
@@ -74,10 +85,7 @@ const ApiService = {
   async getProfile(token) {
     const response = await fetch(buildUrl("/user/profile"), {
       method: "GET",
-      headers: {
-        ...defaultHeaders,
-        Authorization: `Bearer ${token}`,
-      },
+      headers: authHeaders(token),
     });
     return parseResponse(response);
   },
@@ -90,6 +98,67 @@ const ApiService = {
         headers: defaultHeaders,
       }
     );
+    return parseResponse(response);
+  },
+
+  async getTimetable({ schoolCode, grade, classNumber, date } = {}, token) {
+    const params = new URLSearchParams();
+    if (schoolCode) params.append("schoolCode", schoolCode);
+    if (grade !== undefined && grade !== null && grade !== "") {
+      params.append("grade", grade);
+    }
+    if (classNumber !== undefined && classNumber !== null && classNumber !== "") {
+      params.append("class", classNumber);
+    }
+    if (date) params.append("date", date);
+
+    const query = params.toString();
+    const url = query ? `/neis/timetable?${query}` : "/neis/timetable";
+
+    const response = await fetch(buildUrl(url), {
+      method: "GET",
+      headers: token ? authHeaders(token) : defaultHeaders,
+    });
+    return parseResponse(response);
+  },
+
+  async getMeal({ schoolCode, date } = {}, token) {
+    const params = new URLSearchParams();
+    if (schoolCode) params.append("schoolCode", schoolCode);
+    if (date) params.append("date", date);
+
+    const query = params.toString();
+    const url = query ? `/neis/meal?${query}` : "/neis/meal";
+
+    const response = await fetch(buildUrl(url), {
+      method: "GET",
+      headers: token ? authHeaders(token) : defaultHeaders,
+    });
+    return parseResponse(response);
+  },
+
+  async getDailyMissions(token) {
+    const response = await fetch(buildUrl("/user/missions"), {
+      method: "GET",
+      headers: authHeaders(token),
+    });
+    return parseResponse(response);
+  },
+
+  async completeMission(token, payload) {
+    const response = await fetch(buildUrl("/user/mission/complete"), {
+      method: "POST",
+      headers: authJsonHeaders(token),
+      body: JSON.stringify(payload),
+    });
+    return parseResponse(response);
+  },
+
+  async getClassCharacter(token) {
+    const response = await fetch(buildUrl("/user/class/character"), {
+      method: "GET",
+      headers: authHeaders(token),
+    });
     return parseResponse(response);
   },
 };

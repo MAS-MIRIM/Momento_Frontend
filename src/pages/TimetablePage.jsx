@@ -1,7 +1,9 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
 import Header from "../components/Header";
 import TabNavigation from "../components/TabNavigation";
+import ApiService from "../services/api.js";
+import { useAuth } from "../contexts/AuthContext.jsx";
 
 const Container = styled.div`
   width: 100%;
@@ -19,6 +21,12 @@ const ClassLine = styled.div`
   font-size: 20px;
   font-weight: 700;
   color: #111;
+`;
+
+const SubLine = styled.p`
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: #6b7684;
 `;
 
 const DateBar = styled.div`
@@ -94,58 +102,84 @@ const Subject = styled.div`
   font-size: 15px;
   color: #0b3b38;
   font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 `;
 
-const LunchSection = styled.section`
+const Teacher = styled.span`
+  font-size: 13px;
+  color: #7a8a88;
+  font-weight: 500;
+`;
+
+const MealSection = styled.section`
   width: 100%;
   max-width: 960px;
   margin-top: 16px;
   padding: 0 8px 90px;
 `;
 
-const LunchTitle = styled.h3`
+const SectionTitle = styled.h3`
   margin: 0 0 10px;
   font-size: 18px;
   font-weight: 800;
   color: #111;
 `;
 
-const LunchBar = styled.div`
+const MealCards = styled.div`
   display: grid;
-  grid-template-columns: 36px 1fr 36px;
-  align-items: center;
-  gap: 8px;
+  gap: 12px;
 `;
 
-const LunchBtn = styled.button`
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  border: none;
-  background: #ffffff;
-  color: #05baae;
-  font-size: 18px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.15s ease, transform 0.05s ease;
-  &:hover {
-    background: #f6fbfa;
-  }
-  &:active {
-    transform: translateY(1px);
-  }
-`;
-
-const LunchItem = styled.div`
-  height: 44px;
+const MealCard = styled.div`
   border: 1px solid #eef4f3;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  border-radius: 16px;
+  background: #ffffff;
+  padding: 14px 16px;
+`;
+
+const MealHeading = styled.h4`
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 800;
   color: #0b3b38;
-  font-size: 15px;
-  font-weight: 700;
+`;
+
+const MealList = styled.ul`
+  margin: 0;
+  padding-left: 18px;
+  color: #334155;
+  font-size: 14px;
+  line-height: 1.6;
+`;
+
+const MealItem = styled.li`
+  margin: 0;
+`;
+
+const HelperBox = styled.div`
+  width: 100%;
+  max-width: 960px;
+  padding: 16px;
+  border-radius: 16px;
+  background: #f4fffe;
+  color: #004f49;
+  border: 1px solid #d4f4ef;
+  text-align: center;
+  margin-top: 24px;
+`;
+
+const ErrorBox = styled(HelperBox)`
+  background: #fff5f5;
+  color: #d93025;
+  border-color: #ffd5d0;
+`;
+
+const LoadingBox = styled(HelperBox)`
+  background: #ffffff;
+  color: #0b3b38;
+  border-color: #eaf6f4;
 `;
 
 const BottomPad = styled.div`
@@ -161,55 +195,159 @@ function fmtKoreanDate(d) {
   return `${y}년 ${m}월 ${day}일 (${w})`;
 }
 
-const EXAMPLE_TABLE = {
-  1: ["국어", "수학", "체육", "영어", "과학", "음악", "자율"],
-  2: ["사회", "수학", "미술", "국어", "영어", "과학", "창체"],
-  3: ["국어", "수학", "영어", "사회", "체육", "과학", "동아리"],
-  4: ["수학", "국어", "과학", "영어", "사회", "기술가정", "창체"],
-  5: ["영어", "과학", "사회", "수학", "국어", "체육", "자율"],
-  6: ["자율", "자율", "자율", "자율", "자율", "자율", "자율"],
-  0: ["국어 보충", "수학 보충", "영어 보충", "자습", "자습", "자습", "자율"],
-};
-
-const EXAMPLE_LUNCH = [
-  "잡곡밥 + 김치",
-  "돈까스 + 샐러드",
-  "카레라이스",
-  "비빔밥",
-  "짜장밥 + 단무지",
-];
-
 const TimetablePage = () => {
-  const grade = 2;
-  const klass = 2;
-  const [date, setDate] = useState(new Date(2025, 9, 24));
-  const [lunchIdx, setLunchIdx] = useState(0);
+  const { user, token } = useAuth();
+  const [date, setDate] = useState(() => new Date());
+  const [timetableDays, setTimetableDays] = useState([]);
+  const [timetableError, setTimetableError] = useState("");
+  const [isTimetableLoading, setIsTimetableLoading] = useState(false);
 
-  const weekday = date.getDay();
-  const timetable = useMemo(() => EXAMPLE_TABLE[weekday] || [], [weekday]);
+  const [mealData, setMealData] = useState(null);
+  const [mealError, setMealError] = useState("");
+  const [isMealLoading, setIsMealLoading] = useState(false);
+
+  const grade = useMemo(() => {
+    if (!user) return null;
+    if (user.role === "student") return user.grade ?? null;
+    return user.homeroomGrade ?? null;
+  }, [user]);
+
+  const klass = useMemo(() => {
+    if (!user) return null;
+    if (user.role === "student") return user["class"] ?? null;
+    return user.homeroomClass ?? null;
+  }, [user]);
+
+  const schoolCode = user?.schoolCode;
+
+  const yyyymmdd = useMemo(() => {
+    const y = date.getFullYear();
+    const m = `${date.getMonth() + 1}`.padStart(2, "0");
+    const d = `${date.getDate()}`.padStart(2, "0");
+    return `${y}${m}${d}`;
+  }, [date]);
+
+  useEffect(() => {
+    if (!schoolCode || !grade || !klass) {
+      return;
+    }
+
+    let ignore = false;
+    setIsTimetableLoading(true);
+    setTimetableError("");
+
+    ApiService.getTimetable({
+      schoolCode,
+      grade,
+      classNumber: klass,
+      date: yyyymmdd,
+    }, token)
+      .then((data) => {
+        if (ignore) return;
+        setTimetableDays(Array.isArray(data?.days) ? data.days : []);
+      })
+      .catch((error) => {
+        if (ignore) return;
+        console.error("Failed to fetch timetable", error);
+        setTimetableError(
+          error?.data?.message ||
+            error?.message ||
+            "시간표 정보를 불러오지 못했습니다."
+        );
+        setTimetableDays([]);
+      })
+      .finally(() => {
+        if (!ignore) setIsTimetableLoading(false);
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [schoolCode, grade, klass, yyyymmdd, token]);
+
+  useEffect(() => {
+    if (!schoolCode) {
+      return;
+    }
+
+    let ignore = false;
+    setIsMealLoading(true);
+    setMealError("");
+
+    ApiService.getMeal({
+      schoolCode,
+      date: yyyymmdd,
+    }, token)
+      .then((data) => {
+        if (ignore) return;
+        setMealData(data || null);
+      })
+      .catch((error) => {
+        if (ignore) return;
+        console.error("Failed to fetch meal", error);
+        setMealError(
+          error?.data?.message ||
+            error?.message ||
+            "급식 정보를 불러오지 못했습니다."
+        );
+        setMealData(null);
+      })
+      .finally(() => {
+        if (!ignore) setIsMealLoading(false);
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [schoolCode, yyyymmdd, token]);
+
+  const periods = useMemo(() => {
+    if (!Array.isArray(timetableDays)) return [];
+    const day = timetableDays.find((item) => item.date === yyyymmdd);
+    if (!day) return [];
+    return Array.isArray(day.periods) ? day.periods : [];
+  }, [timetableDays, yyyymmdd]);
+
+  const formattedMeal = useMemo(() => {
+    if (!mealData) return null;
+    const { breakfast, lunch, dinner } = mealData;
+    return {
+      breakfast: Array.isArray(breakfast) ? breakfast : [],
+      lunch: Array.isArray(lunch) ? lunch : [],
+      dinner: Array.isArray(dinner) ? dinner : [],
+    };
+  }, [mealData]);
 
   const goPrevDate = () => {
     const d = new Date(date);
     d.setDate(d.getDate() - 1);
     setDate(d);
   };
+
   const goNextDate = () => {
     const d = new Date(date);
     d.setDate(d.getDate() + 1);
     setDate(d);
   };
 
-  const prevLunch = () =>
-    setLunchIdx((i) => (i - 1 + EXAMPLE_LUNCH.length) % EXAMPLE_LUNCH.length);
-  const nextLunch = () => setLunchIdx((i) => (i + 1) % EXAMPLE_LUNCH.length);
+  const canRequestData = Boolean(schoolCode && grade && klass);
 
   return (
     <Container>
       <Header />
 
-      <ClassLine>
-        {grade}학년 {klass}반
-      </ClassLine>
+      {canRequestData ? (
+        <>
+          <ClassLine>
+            {grade}학년 {klass}반
+          </ClassLine>
+          <SubLine>{user?.school ?? "학교 정보 없음"}</SubLine>
+        </>
+      ) : (
+        <HelperBox>
+          시간표를 불러오려면 학교, 학년, 반 정보가 필요합니다.
+        </HelperBox>
+      )}
 
       <DateBar>
         <DateBtn onClick={goPrevDate}>‹</DateBtn>
@@ -217,23 +355,88 @@ const TimetablePage = () => {
         <DateBtn onClick={goNextDate}>›</DateBtn>
       </DateBar>
 
-      <TimetableWrap>
-        {timetable.map((subj, idx) => (
-          <PeriodRow key={idx}>
-            <PeriodBadge>{idx + 1}교시</PeriodBadge>
-            <Subject>{subj}</Subject>
-          </PeriodRow>
+      {canRequestData &&
+        (isTimetableLoading ? (
+          <LoadingBox>시간표를 불러오는 중입니다...</LoadingBox>
+        ) : timetableError ? (
+          <ErrorBox>{timetableError}</ErrorBox>
+        ) : (
+          <TimetableWrap>
+            {periods.length > 0 ? (
+              periods.map((period, idx) => {
+                const {
+                  period: periodNo,
+                  subject,
+                  teacher,
+                  teacher_by_class: teacherByClass,
+                } = period;
+                let teacherText = teacher || "";
+                if (!teacherText && teacherByClass) {
+                  const entries = Object.entries(teacherByClass)
+                    .map(([klassLabel, name]) => `${klassLabel}: ${name}`)
+                    .join(", ");
+                  teacherText = entries;
+                }
+                return (
+                  <PeriodRow key={periodNo || `${subject}-${idx}`}>
+                    <PeriodBadge>
+                      {periodNo ? `${periodNo}교시` : "교시"}
+                    </PeriodBadge>
+                    <Subject>
+                      {subject || "과목 미정"}
+                      {teacherText && <Teacher>{teacherText}</Teacher>}
+                    </Subject>
+                  </PeriodRow>
+                );
+              })
+            ) : (
+              <HelperBox>선택한 날짜의 시간표가 없습니다.</HelperBox>
+            )}
+          </TimetableWrap>
         ))}
-      </TimetableWrap>
 
-      <LunchSection>
-        <LunchTitle>중식</LunchTitle>
-        <LunchBar>
-          <LunchBtn onClick={prevLunch}>‹</LunchBtn>
-          <LunchItem>{EXAMPLE_LUNCH[lunchIdx]}</LunchItem>
-          <LunchBtn onClick={nextLunch}>›</LunchBtn>
-        </LunchBar>
-      </LunchSection>
+      <MealSection>
+        <SectionTitle>급식</SectionTitle>
+        {canRequestData ? (
+          isMealLoading ? (
+            <LoadingBox>급식 정보를 불러오는 중입니다...</LoadingBox>
+          ) : mealError ? (
+            <ErrorBox>{mealError}</ErrorBox>
+          ) : formattedMeal ? (
+            (() => {
+              const titleMap = {
+                breakfast: "아침",
+                lunch: "점심",
+                dinner: "저녁",
+              };
+              const cards = ["breakfast", "lunch", "dinner"].flatMap((key) => {
+                const items = formattedMeal[key];
+                if (!items || items.length === 0) return [];
+                return [
+                  <MealCard key={key}>
+                    <MealHeading>{titleMap[key]}</MealHeading>
+                    <MealList>
+                      {items.map((menu, idx) => (
+                        <MealItem key={`${key}-${idx}`}>{menu}</MealItem>
+                      ))}
+                    </MealList>
+                  </MealCard>,
+                ];
+              });
+              if (cards.length === 0) {
+                return <HelperBox>등록된 급식 정보가 없습니다.</HelperBox>;
+              }
+              return <MealCards>{cards}</MealCards>;
+            })()
+          ) : (
+            <HelperBox>급식 정보를 찾을 수 없습니다.</HelperBox>
+          )
+        ) : (
+          <HelperBox>
+            학교 정보를 찾을 수 없어 급식을 표시할 수 없습니다.
+          </HelperBox>
+        )}
+      </MealSection>
 
       <BottomPad />
       <TabNavigation />
