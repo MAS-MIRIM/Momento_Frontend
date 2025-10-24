@@ -2,8 +2,13 @@ import "./App.css";
 import { BrowserRouter, Route, Routes, useNavigate } from "react-router-dom";
 import Welcome from "./pages/Welcome";
 import LoginScreen from "./pages/LoginPage";
-import SignUpScreen from "./pages/SignupPage";
+import SignUpScreen from "./pages/SignUpPage";
 import HomePage from "./pages/HomePage";
+import CalendarPage from "./pages/CalendarPage";
+import TimetablePage from "./pages/TimetablePage";
+import ProfilePage from "./pages/ProfilePage";
+import StudentPage from "./pages/StudentPage";
+import StudentRecordPage from "./pages/StudentRecordPage";
 
 const App = () => {
   return (
@@ -13,6 +18,12 @@ const App = () => {
         <Route path="/login" element={<LoginRoute />} />
         <Route path="/signup" element={<SignUpRoute />} />
         <Route path="/home" element={<HomeRoute />} />
+        <Route path="/calendar" element={<CalendarRoute />} />
+        <Route path="/clock" element={<ClockRoute />} />
+        <Route path="/timetable" element={<TimetableRoute />} />
+        <Route path="/profile" element={<ProfileRoute />} />
+        <Route path="/students" element={<StudentRoute />} />
+        <Route path="/student-record" element={<StudentRecordRoute />} />
       </Routes>
     </BrowserRouter>
   );
@@ -50,7 +61,7 @@ const SignUpRoute = () => {
   return (
     <div className="app-container">
       <SignUpScreen
-        onLoginSuccess={() => navigate("/home")}
+        onSignUpSuccess={() => navigate("/home")}
         onLoginPress={() => navigate("/login")}
       />
     </div>
@@ -60,7 +71,55 @@ const SignUpRoute = () => {
 const HomeRoute = () => {
   return (
     <div className="app-container">
-      <HomePage />;
+      <HomePage />
+    </div>
+  );
+};
+
+const CalendarRoute = () => {
+  return (
+    <div className="app-container">
+      <CalendarPage />
+    </div>
+  );
+};
+
+const ClockRoute = () => {
+  return (
+    <div className="app-container">
+      <ClockPage />
+    </div>
+  );
+};
+
+const TimetableRoute = () => {
+  return (
+    <div className="app-container">
+      <TimetablePage />
+    </div>
+  );
+};
+
+const ProfileRoute = () => {
+  return (
+    <div className="app-container">
+      <ProfilePage />
+    </div>
+  );
+};
+
+const StudentRoute = () => {
+  return (
+    <div className="app-container">
+      <StudentPage />
+    </div>
+  );
+};
+
+const StudentRecordRoute = () => {
+  return (
+    <div className="app-container">
+      <StudentRecordPage />
     </div>
   );
 };

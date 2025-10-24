@@ -2,7 +2,7 @@ import { useState } from "react";
 import styled from "styled-components";
 import logo from "../assets/logo.png";
 import error from "../assets/error.png";
-// import ApiService from "../utils/api"; TODO: 연결되면 API 호출 활성화
+import { useAuth } from "../contexts/AuthContext.jsx";
 
 const ErrorText = ({ children }) => (
   <StyledErrorText>
@@ -21,6 +21,9 @@ const LoginScreen = ({
   const [idError, setIdError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [authError, setAuthError] = useState("");
+
+  const { login } = useAuth();
 
   const isFormValid = userId.trim().length > 0 && password.trim().length > 0;
 
@@ -37,12 +40,17 @@ const LoginScreen = ({
     }
 
     setIsSubmitting(true);
+    setAuthError("");
     try {
-      // await ApiService.login(userId, password);
+      await login(userId.trim(), password);
       onLoginSuccess();
     } catch (error) {
-      console.error("Login error (placeholder)", error);
-      window.alert("로그인 중 문제가 발생했습니다.");
+      console.error("Login error", error);
+      const message =
+        error?.data?.message ||
+        error?.message ||
+        "로그인 중 문제가 발생했습니다.";
+      setAuthError(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -51,12 +59,16 @@ const LoginScreen = ({
   const handleIdChange = (event) => {
     setUserId(event.target.value);
     setIdError("");
+    if (authError) setAuthError("");
   };
 
   const handlePasswordChange = (event) => {
     setPassword(event.target.value);
     setPasswordError("");
+    if (authError) setAuthError("");
   };
+
+  const submitLabel = isSubmitting ? "로그인 중..." : "로그인";
 
   return (
     <Container>
@@ -71,7 +83,7 @@ const LoginScreen = ({
             </StepTitle>
 
             <Field>
-              <InputWrapper hasError={Boolean(idError)}>
+              <InputWrapper $hasError={Boolean(idError)}>
                 <StyledInput
                   value={userId}
                   onChange={handleIdChange}
@@ -83,7 +95,7 @@ const LoginScreen = ({
             </Field>
 
             <Field>
-              <InputWrapper hasError={Boolean(passwordError)}>
+              <InputWrapper $hasError={Boolean(passwordError)}>
                 <StyledInput
                   value={password}
                   onChange={handlePasswordChange}
@@ -100,12 +112,13 @@ const LoginScreen = ({
               </InputWrapper>
               {passwordError && <ErrorText>{passwordError}</ErrorText>}
             </Field>
+            {authError && <ErrorText>{authError}</ErrorText>}
           </StepArea>
         </Content>
 
         <ButtonGroup>
           <PrimaryButton type="submit" disabled={!isFormValid || isSubmitting}>
-            로그인
+            {submitLabel}
           </PrimaryButton>
           <LoginPrompt>
             <PromptText>아직 계정이 없으신가요?</PromptText>
@@ -140,9 +153,13 @@ const Card = styled.form`
 const Content = styled.div`
   flex: 1;
   display: flex;
+  margin-top: 50%;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
+  align-items: center;
+  position: relative;
   gap: 24px;
+  padding-top: 24px;
 `;
 
 const StepArea = styled.div`
@@ -183,7 +200,7 @@ const InputWrapper = styled.div`
   font-family: "Pretendard";
   align-items: center;
   width: 340px;
-  border: 1px solid ${({ hasError }) => (hasError ? "#ff4444" : "#ededed")};
+  border: 1px solid ${({ $hasError }) => ($hasError ? "#ff4444" : "#ededed")};
   border-radius: 15px;
   padding: 0 14px;
   background-color: #ffffff;
