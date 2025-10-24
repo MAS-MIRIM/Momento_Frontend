@@ -2,15 +2,27 @@ import React, { useMemo, useState } from "react";
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
+import { useAuth } from "../contexts/AuthContext.jsx";
+import profileImg from "../assets/profile.png";
 
 const Container = styled.div`
   width: 100%;
-  min-height: 100%;
+  height: 100%;
+  padding: 20px;
   background: #fff;
   display: flex;
   flex-direction: column;
+  position: relative;
+`;
+
+const ScrollWrapper = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  padding: 20px;
+  margin-bottom: 12px;
 `;
 
 const PageWrap = styled.div`
@@ -53,16 +65,11 @@ const Card = styled.button`
   }
 `;
 
-const Avatar = styled.div`
+const Avatar = styled.img`
   width: 48px;
   height: 48px;
   border-radius: 12px;
-  background: #f2fbfa;
-  color: #05baae;
-  font-weight: 900;
-  display: grid;
-  place-items: center;
-  font-size: 18px;
+  object-fit: cover;
   margin-bottom: 10px;
 `;
 
@@ -90,7 +97,7 @@ const CheckTable = styled.div`
 
 const Row = styled.div`
   display: grid;
-  grid-template-columns: 1fr 120px 120px;
+  grid-template-columns: 2fr 120px 120px;
   align-items: center;
   gap: 8px;
   padding: 12px 14px;
@@ -131,34 +138,94 @@ const ToggleBtn = styled.button`
   }
 `;
 
+const MissionChip = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #f2fbfa;
+  color: #0b3b38;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 10px;
+`;
+
+const MissionText = styled.span`
+  font-size: 13px;
+  color: #4b5b59;
+`;
+
+const MissionDetail = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+`;
+
+const MISSION_POOL = [
+  "친구 한 명에게 칭찬 한마디 전하기",
+  "수업 노트 정리해서 선생님께 확인받기",
+  "교실 정리정돈 구역 담당하기",
+  "급식 후 식판 정리 도와주기",
+  "오늘 배운 내용 3줄 요약 작성하기",
+  "조별 활동에서 발표 역할 맡기",
+  "학습지 제출 여부 다시 확인하기",
+];
+
 const StudentsPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
-  // 예시 데이터
-  const classroom = { grade: 2, classNo: 2 }; // 2학년 2반
-  const students = useMemo(
-    () => [
+  const classroom = useMemo(() => {
+    if (!user) {
+      return { grade: null, classNo: null };
+    }
+    if (user.role === "teacher") {
+      return {
+        grade: user.homeroomGrade ?? null,
+        classNo: user.homeroomClass ?? null,
+      };
+    }
+    return {
+      grade: user.grade ?? null,
+      classNo: user["class"] ?? null,
+    };
+  }, [user]);
+
+  const gradeLabel = classroom.grade
+    ? `${classroom.grade}학년`
+    : "학년 정보 없음";
+  const classLabel = classroom.classNo
+    ? `${classroom.classNo}반`
+    : "반 정보 없음";
+  const students = useMemo(() => {
+    const base = [
       { id: "S01", name: "정희진", number: 1 },
-      { id: "S02", name: "김도현", number: 2 },
-      { id: "S03", name: "박수연", number: 3 },
-      { id: "S04", name: "이서준", number: 4 },
-      { id: "S05", name: "최예진", number: 5 },
-      { id: "S06", name: "오지후", number: 6 },
-    ],
-    []
-  );
+      { id: "S02", name: "박홍준", number: 2 },
+      { id: "S03", name: "윤수아", number: 3 },
+      { id: "S04", name: "박지우", number: 4 },
+      { id: "S05", name: "김하진", number: 5 },
+      { id: "S06", name: "윤건", number: 6 },
+    ];
+    return base.map((student) => {
+      const mission =
+        MISSION_POOL[Math.floor(Math.random() * MISSION_POOL.length)];
+      return { ...student, mission };
+    });
+  }, []);
 
   // 미션 체크 상태: { [studentId]: "O" | "X" | undefined }
   const [missionStatus, setMissionStatus] = useState({});
 
   const handleGoDetail = (stu) => {
-    navigate(`/teacher/students/${stu.id}`, {
+    navigate(`/students/${stu.id}`, {
       state: {
-        grade: classroom.grade,
-        classNo: classroom.classNo,
+        grade: classroom.grade ?? undefined,
+        classNo: classroom.classNo ?? undefined,
         name: stu.name,
         number: stu.number,
         id: stu.id,
+        mission: stu.mission,
       },
     });
   };
@@ -170,67 +237,75 @@ const StudentsPage = () => {
   return (
     <Container>
       <Header />
+      <ScrollWrapper>
+        <PageWrap>
+          <Title>
+            {gradeLabel} {classLabel}
+          </Title>
+          <Sub>학생 카드를 누르면 생기부 작성 페이지로 이동합니다.</Sub>
 
-      <PageWrap>
-        <Title>
-          {classroom.grade}학년 {classroom.classNo}반 — 우리 반 학생
-        </Title>
-        <Sub>학생 카드를 누르면 생기부 작성 페이지로 이동합니다.</Sub>
-
-        <Grid>
-          {students.map((s) => (
-            <Card key={s.id} onClick={() => handleGoDetail(s)}>
-              <Avatar>{s.number}</Avatar>
-              <Name>{s.name}</Name>
-              <Meta>
-                {classroom.grade}학년 {classroom.classNo}반 {s.number}번
-              </Meta>
-            </Card>
-          ))}
-        </Grid>
-
-        <Section>
-          <Title>미션 체크(O / X)</Title>
-          <CheckTable>
+          <Grid>
             {students.map((s) => (
-              <Row key={`row-${s.id}`}>
-                <Cell>
-                  <strong>
-                    {s.number}번 {s.name}
-                  </strong>
-                  <Badge>오늘의 미션</Badge>
-                </Cell>
-                <Cell>
-                  <ToggleBtn
-                    $type="ok"
-                    onClick={() => checkMission(s.id, "O")}
-                    aria-label="미션 성공"
-                  >
-                    O
-                  </ToggleBtn>
-                </Cell>
-                <Cell>
-                  <ToggleBtn
-                    $type="x"
-                    onClick={() => checkMission(s.id, "X")}
-                    aria-label="미션 실패"
-                  >
-                    X
-                  </ToggleBtn>
-                </Cell>
-              </Row>
+              <Card key={s.id} onClick={() => handleGoDetail(s)}>
+                <Avatar src={profileImg} alt={`${s.name} 프로필`} />
+                <Name>{s.name}</Name>
+                <Meta>
+                  {classroom.grade ? `${classroom.grade}학년 ` : ""}
+                  {classroom.classNo ? `${classroom.classNo}반 ` : ""}
+                  {s.number}번
+                </Meta>
+              </Card>
             ))}
-          </CheckTable>
-          <Sub style={{ marginTop: 8 }}>
-            현재 상태:{" "}
-            {students.map((s) => (
-              <span key={`st-${s.id}`} style={{ marginRight: 8 }}>
-                {s.name}:{missionStatus[s.id] || "-"}
-              </span>
-            ))}
-          </Sub>
-        </Section>
-      </PageWrap>
+          </Grid>
+
+          <Section>
+            <Title>미션 체크</Title>
+            <CheckTable>
+              {students.map((s) => (
+                <Row key={`row-${s.id}`}>
+                  <Cell>
+                    <MissionDetail>
+                      <strong>
+                        {s.number}번 {s.name}
+                      </strong>
+                      <div>
+                        <Badge>오늘의 미션</Badge>
+                        <MissionText>{s.mission}</MissionText>
+                      </div>
+                    </MissionDetail>
+                  </Cell>
+                  <Cell>
+                    <ToggleBtn
+                      $type="ok"
+                      onClick={() => checkMission(s.id, "O")}
+                      aria-label="미션 성공"
+                    >
+                      O
+                    </ToggleBtn>
+                  </Cell>
+                  <Cell>
+                    <ToggleBtn
+                      $type="x"
+                      onClick={() => checkMission(s.id, "X")}
+                      aria-label="미션 실패"
+                    >
+                      X
+                    </ToggleBtn>
+                  </Cell>
+                </Row>
+              ))}
+            </CheckTable>
+            <Sub style={{ marginTop: 8 }}>
+              현재 상태:{" "}
+              {students.map((s) => (
+                <span key={`st-${s.id}`} style={{ marginRight: 8 }}>
+                  {s.name}:{missionStatus[s.id] || "-"}
+                </span>
+              ))}
+            </Sub>
+          </Section>
+        </PageWrap>
+      </ScrollWrapper>
     </Container>
   );
 };

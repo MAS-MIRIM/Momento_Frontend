@@ -5,10 +5,10 @@ import LoginScreen from "./pages/LoginPage";
 import SignUpScreen from "./pages/SignUpPage";
 import HomePage from "./pages/HomePage";
 import CalendarPage from "./pages/CalendarPage";
-import ClockPage from "./pages/ClockPage";
 import TimetablePage from "./pages/TimetablePage";
 import ProfilePage from "./pages/ProfilePage";
 import StudentPage from "./pages/StudentPage";
+import StudentRecordPage from "./pages/StudentRecordPage";
 
 const App = () => {
   return (
@@ -19,10 +19,10 @@ const App = () => {
         <Route path="/signup" element={<SignUpRoute />} />
         <Route path="/home" element={<HomeRoute />} />
         <Route path="/calendar" element={<CalendarRoute />} />
-        <Route path="/clock" element={<ClockRoute />} />
         <Route path="/timetable" element={<TimetableRoute />} />
         <Route path="/profile" element={<ProfileRoute />} />
         <Route path="/students" element={<StudentRoute />} />
+        <Route path="/students/:studentId" element={<StudentRecordRoute />} />
       </Routes>
     </BrowserRouter>
   );
@@ -83,14 +83,6 @@ const CalendarRoute = () => {
   );
 };
 
-const ClockRoute = () => {
-  return (
-    <div className="app-container">
-      <ClockPage />
-    </div>
-  );
-};
-
 const TimetableRoute = () => {
   return (
     <div className="app-container">
@@ -111,6 +103,14 @@ const StudentRoute = () => {
   return (
     <div className="app-container">
       <StudentPage />
+    </div>
+  );
+};
+
+const StudentRecordRoute = () => {
+  return (
+    <div className="app-container">
+      <StudentRecordPage />
     </div>
   );
 };
