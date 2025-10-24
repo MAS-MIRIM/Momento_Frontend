@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import Header from "../components/Header";
 import TabNavigation from "../components/TabNavigation";
@@ -401,6 +402,7 @@ const MissionEditor = ({ onMissionCreated }) => {
 /* === TeacherHomePage 컴포넌트 === */
 const TeacherHomePage = () => {
   const { user, token } = useAuth();
+  const navigate = useNavigate();
 
   // 반 캐릭터 정보 상태 (StudentHomePage와 동일)
   const [classInfo, setClassInfo] = useState({
