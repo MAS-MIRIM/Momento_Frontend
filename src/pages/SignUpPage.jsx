@@ -316,11 +316,11 @@ const StepArea = styled.div`
 `;
 
 const LogoImg = styled.img`
-  width: 80px;
+  width: 120px;
   height: auto;
-  margin-right: 8px;
+  margin-right: 4px;
   vertical-align: middle;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 `;
 
 const StepTitle = styled.h1`
