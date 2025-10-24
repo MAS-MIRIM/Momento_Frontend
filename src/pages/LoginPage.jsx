@@ -1,6 +1,15 @@
 import { useState } from "react";
 import styled from "styled-components";
-// import ApiService from "../utils/api"; // TODO: 연결되면 API 호출 활성화
+import logo from "../assets/logo.png";
+import error from "../assets/error.png";
+// import ApiService from "../utils/api"; TODO: 연결되면 API 호출 활성화
+
+const ErrorText = ({ children }) => (
+  <StyledErrorText>
+    <ErrorIcon src={error} alt="경고" />
+    {children}
+  </StyledErrorText>
+);
 
 const LoginScreen = ({
   onLoginSuccess = () => {},
@@ -51,58 +60,61 @@ const LoginScreen = ({
 
   return (
     <Container>
-      <Form onSubmit={handleLogin}>
+      <Card onSubmit={handleLogin}>
         <Content>
-          <Header>
-            POP!CK에서 사용했던
-            <br />
-            정보를 입력해주세요.
-          </Header>
+          <StepArea>
+            <StepTitle>
+              <LogoImg src={logo} alt="로고" />
+              에서 사용했던
+              <br />
+              정보를 입력해주세요.
+            </StepTitle>
 
-          <Field>
-            <InputWrapper hasError={Boolean(idError)}>
-              <StyledInput
-                value={userId}
-                onChange={handleIdChange}
-                placeholder="아이디를 입력해주세요."
-                autoComplete="username"
-              />
-            </InputWrapper>
-            {idError && <ErrorText>{idError}</ErrorText>}
-          </Field>
+            <Field>
+              <InputWrapper hasError={Boolean(idError)}>
+                <StyledInput
+                  value={userId}
+                  onChange={handleIdChange}
+                  placeholder="아이디를 입력해주세요."
+                  autoComplete="username"
+                />
+              </InputWrapper>
+              {idError && <ErrorText>{idError}</ErrorText>}
+            </Field>
 
-          <Field>
-            <InputWrapper hasError={Boolean(passwordError)}>
-              <StyledInput
-                value={password}
-                onChange={handlePasswordChange}
-                placeholder="비밀번호를 입력해주세요."
-                type={showPassword ? "text" : "password"}
-                autoComplete="current-password"
-              />
-              <ToggleButton
-                type="button"
-                onClick={() => setShowPassword((previous) => !previous)}
-              >
-                {showPassword ? "숨기기" : "표시"}
-              </ToggleButton>
-            </InputWrapper>
-            {passwordError && <ErrorText>{passwordError}</ErrorText>}
-          </Field>
+            <Field>
+              <InputWrapper hasError={Boolean(passwordError)}>
+                <StyledInput
+                  value={password}
+                  onChange={handlePasswordChange}
+                  placeholder="비밀번호를 입력해주세요."
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                />
+                <ToggleButton
+                  type="button"
+                  onClick={() => setShowPassword((previous) => !previous)}
+                >
+                  {showPassword ? "숨기기" : "표시"}
+                </ToggleButton>
+              </InputWrapper>
+              {passwordError && <ErrorText>{passwordError}</ErrorText>}
+            </Field>
+          </StepArea>
         </Content>
 
         <ButtonGroup>
           <PrimaryButton type="submit" disabled={!isFormValid || isSubmitting}>
             로그인
           </PrimaryButton>
-          <PromptRow>
+          <LoginPrompt>
             <PromptText>아직 계정이 없으신가요?</PromptText>
             <TextButton type="button" onClick={onSignUpPress}>
               회원가입
             </TextButton>
-          </PromptRow>
+          </LoginPrompt>
         </ButtonGroup>
-      </Form>
+      </Card>
     </Container>
   );
 };
@@ -117,7 +129,7 @@ const Container = styled.div`
   padding: 40px 20px;
 `;
 
-const Form = styled.form`
+const Card = styled.form`
   width: 100%;
   max-width: 420px;
   height: 100%;
@@ -130,29 +142,50 @@ const Content = styled.div`
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 20px;
+  gap: 24px;
 `;
 
-const Header = styled.h1`
+const StepArea = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+`;
+
+const LogoImg = styled.img`
+  width: 80px;
+  height: auto;
+  margin-right: 8px;
+  vertical-align: middle;
+  margin-bottom: 8px;
+`;
+
+const StepTitle = styled.h1`
   font-size: 24px;
   font-weight: 700;
-  line-height: 32px;
+  line-height: 36px;
   margin: 0;
-  text-align: center;
+  text-align: left;
+  width: 340px;
+  margin-bottom: 8px;
 `;
 
 const Field = styled.div`
   display: flex;
   flex-direction: column;
   gap: 8px;
+  align-items: center;
+  font-family: "Pretendard";
 `;
 
 const InputWrapper = styled.div`
   display: flex;
+  font-family: "Pretendard";
   align-items: center;
-  border: 1px solid ${({ hasError }) => (hasError ? "#ff4444" : "#e8e8e8")};
-  border-radius: 8px;
-  padding: 0 12px;
+  width: 340px;
+  border: 1px solid ${({ hasError }) => (hasError ? "#ff4444" : "#ededed")};
+  border-radius: 15px;
+  padding: 0 14px;
   background-color: #ffffff;
   transition: border-color 0.2s ease;
 
@@ -163,6 +196,7 @@ const InputWrapper = styled.div`
 
 const StyledInput = styled.input`
   flex: 1;
+  font-family: "Pretendard";
   border: none;
   padding: 14px 0;
   font-size: 16px;
@@ -172,6 +206,7 @@ const StyledInput = styled.input`
 
   ::placeholder {
     color: #a7a7a7;
+    font-family: "Pretendard";
   }
 `;
 
@@ -185,9 +220,22 @@ const ToggleButton = styled.button`
   padding: 0 4px;
 `;
 
-const ErrorText = styled.span`
+const ErrorIcon = styled.img`
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
+  flex-shrink: 0;
+`;
+
+const StyledErrorText = styled.span`
   color: #ff4444;
   font-size: 14px;
+  width: 340px;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  padding-left: 2px;
+  margin-top: 4px;
 `;
 
 const ButtonGroup = styled.div`
@@ -222,7 +270,7 @@ const PrimaryButton = styled.button`
   }
 `;
 
-const PromptRow = styled.div`
+const LoginPrompt = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
